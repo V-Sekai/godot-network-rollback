@@ -17,9 +17,11 @@ func _get_local_input() -> Dictionary:
 		Input.get_action_strength("player_right") - Input.get_action_strength("player_left"),
 		Input.get_action_strength("player_down") - Input.get_action_strength("player_up")
 	)
-	return {
-		PlayerInputKey.INPUT_VECTOR: input_vector,
-	}
+	var input := {}
+	if input_vector != Vector2.ZERO:
+		input[PlayerInputKey.INPUT_VECTOR] = input_vector
+	
+	return input
 
 func _network_process(delta: float, input: Dictionary) -> void:
 	position += input.get(PlayerInputKey.INPUT_VECTOR, Vector2.ZERO) * 4

@@ -51,7 +51,8 @@ class InputForPlayer:
 	func _init(_input: Dictionary, _predicted: bool) -> void:
 		input = _input
 		predicted = _predicted
-		input['$'] = _calculate_cleaned_hash()
+		if not input.has('$'):
+			input['$'] = _calculate_cleaned_hash()
 	
 	# Calculates the input hash without any keys that start with '_' (if string)
 	# or less than 0 (if integer) to allow some properties to not count when
@@ -608,6 +609,9 @@ func _send_input_messages_to_peer(peer_id: int) -> void:
 			if bytes > debug_message_bytes:
 				push_error("Sending message w/ size %s bytes" % bytes)
 		
+		#var ticks = msg[InputMessageKey.INPUT].keys()
+		#print ("Sending ticks %s - %s" % [ticks[0], ticks[-1]])
+		
 		rpc_unreliable_id(peer_id, "_rit", msg)
 
 func _send_input_messages_to_all_peers() -> void:
@@ -660,6 +664,8 @@ func _physics_process(delta: float) -> void:
 	elif input_buffer_underruns > 0:
 		emit_signal("sync_regained")
 		input_buffer_underruns = 0
+		# We may need to still skip a few ticks to account for our latency
+		_calculate_skip_ticks(true)
 	
 	if skip_ticks > 0:
 		skip_ticks -= 1
@@ -734,7 +740,7 @@ remote func _rit(msg: Dictionary) -> void:
 		if not input_frame.is_player_input_predicted(peer_id):
 			continue
 		
-		print ("Received remote tick %s from %s" % [remote_tick, peer_id])
+		#print ("Received remote tick %s from %s" % [remote_tick, peer_id])
 		
 		# If we received a tick in the past and we aren't already setup to
 		# rollback earlier than that...
@@ -753,10 +759,15 @@ remote func _rit(msg: Dictionary) -> void:
 			# Otherwise, just store it.
 			input_frame.players[peer_id] = InputForPlayer.new(remote_input, false)
 	
-	# Record stats about the integrated input.
-	if first_remote_tick == peer.last_remote_tick_received + 1:
-		peer.last_remote_tick_received = max(last_remote_tick, peer.last_remote_tick_received)
+	# Find what the last remote tick we received was after filling these in.
+	var index = (peer.last_remote_tick_received - _input_buffer_start_tick) + 1
+	while index < input_buffer.size() and not input_buffer[index].is_player_input_predicted(peer.peer_id):
+		peer.last_remote_tick_received += 1
+		index += 1
+	
+	# Record the next frame the other peer needs.
 	peer.next_local_tick_requested = max(msg[InputMessageKey.NEXT_TICK_REQUESTED], peer.next_local_tick_requested)
+	
 	# Number of frames the remote is predicting for us.
 	peer.remote_lag = (peer.last_remote_tick_received + 1) - peer.next_local_tick_requested
 
