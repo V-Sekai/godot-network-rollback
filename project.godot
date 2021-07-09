@@ -17,10 +17,19 @@ config/icon="res://icon.png"
 [autoload]
 
 SyncManager="*res://addons/network-sync-rollback/SyncManager.gd"
+SyncDebugger="*res://addons/network-sync-rollback/SyncDebugger.gd"
+
+[debug]
+
+multirun/number_of_windows=2
+multirun/window_distance=1270
+multirun/add_custom_args=true
+multirun/first_window_args="server"
+multirun/other_window_args=""
 
 [editor_plugins]
 
-enabled=PoolStringArray( "res://addons/network-sync-rollback/plugin.cfg" )
+enabled=PoolStringArray( "res://addons/multirun/plugin.cfg", "res://addons/network-sync-rollback/plugin.cfg" )
 
 [input]
 
@@ -42,6 +51,11 @@ player_left={
 player_right={
 "deadzone": 0.5,
 "events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":16777233,"unicode":0,"echo":false,"script":null)
+ ]
+}
+sync_debug={
+"deadzone": 0.5,
+"events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":16777254,"unicode":0,"echo":false,"script":null)
  ]
 }
 
