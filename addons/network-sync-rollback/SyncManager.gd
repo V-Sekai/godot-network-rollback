@@ -528,25 +528,24 @@ func is_player_input_complete(tick: int) -> bool:
 func is_current_player_input_complete() -> bool:
 	return is_player_input_complete(current_tick)
 
-func _get_input_messages_in_range(first_index: int, last_index: int) -> Array:
+func _get_input_messages_in_range(first_index: int, last_index: int, reverse: bool = false) -> Array:
 	var all_messages := []
 	
 	var local_peer_id = get_tree().get_network_unique_id()
 	
 	var msg := {}
-	var index := first_index
-	while index <= last_index:
+	
+	var indexes = range(first_index, last_index + 1) if not reverse else range(last_index, first_index - 1, -1)
+	for index in indexes:
 		var input_frame: InputBufferFrame = input_buffer[index]
 		msg[input_frame.tick] = _map_input_paths(input_frame.players[local_peer_id].input)
 		
 		if max_input_frames_per_message > 0 and msg.size() == max_input_frames_per_message:
-			all_messages.push_front(msg)
+			all_messages.append(msg)
 			msg = {}
-		
-		index += 1
 	
 	if msg.size() > 0:
-		all_messages.push_front(msg)
+		all_messages.append(msg)
 	
 	return all_messages
 
@@ -556,12 +555,12 @@ func _get_input_messages_for_peer(peer: Peer) -> Array:
 	var max_messages := (max_input_frames_per_message * max_messages_per_tick)
 	
 	if (last_index + 1) - first_index <= max_messages:
-		return _get_input_messages_in_range(first_index, last_index)
+		return _get_input_messages_in_range(first_index, last_index, true)
 	
 	var new_messages = int(ceil(max_messages_per_tick / 2.0))
 	var old_messages = int(floor(max_messages_per_tick / 2.0))
 	
-	return _get_input_messages_in_range(last_index - (new_messages * max_input_frames_per_message) + 1, last_index) + \
+	return _get_input_messages_in_range(last_index - (new_messages * max_input_frames_per_message) + 1, last_index, true) + \
 		   _get_input_messages_in_range(first_index, first_index + (old_messages * max_input_frames_per_message) - 1)
 
 func _calculate_skip_ticks(force_calculate_advantage: bool = false) -> bool:
@@ -610,7 +609,7 @@ func _send_input_messages_to_peer(peer_id: int) -> void:
 				push_error("Sending message w/ size %s bytes" % bytes)
 		
 		#var ticks = msg[InputMessageKey.INPUT].keys()
-		#print ("Sending ticks %s - %s" % [ticks[0], ticks[-1]])
+		#print ("Sending ticks %s - %s" % [min(ticks[0], ticks[-1]), max(ticks[0], ticks[-1])])
 		
 		rpc_unreliable_id(peer_id, "_rit", msg)
 
