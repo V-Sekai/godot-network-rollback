@@ -125,7 +125,7 @@ var ticks_to_calculate_advantage := 60
 var input_delay := 2 setget set_input_delay
 var max_input_frames_per_message := 3
 var max_messages_per_tick := 5
-var max_input_buffer_underruns := 120
+var max_input_buffer_underruns := 300
 var rollback_debug_ticks := 0
 var debug_message_bytes := 500
 var log_state := false
@@ -661,6 +661,8 @@ func _physics_process(delta: float) -> void:
 		if input_buffer_underruns >= max_input_buffer_underruns:
 			_handle_fatal_error("Unable to regain synchronization")
 			return
+		# Even when we're skipping ticks, still send input.
+		_send_input_messages_to_all_peers()
 	elif input_buffer_underruns > 0:
 		emit_signal("sync_regained")
 		input_buffer_underruns = 0
