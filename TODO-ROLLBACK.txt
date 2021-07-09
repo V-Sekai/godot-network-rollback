@@ -1,0 +1,6 @@
+TODO
+===
+
+ * Retain all input frames that are needed by some peer
+ * Send half new input frames, and half old input frames
+

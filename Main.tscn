@@ -49,11 +49,11 @@ text = "Client"
 anchor_left = 0.5
 anchor_right = 0.5
 margin_left = -275.0
-margin_right = 275.0
-margin_bottom = 14.0
+margin_right = 276.0
+margin_bottom = 124.0
 custom_fonts/font = SubResource( 1 )
-text = "TEXT"
 align = 1
+autowrap = true
 __meta__ = {
 "_edit_use_anchors_": false
 }

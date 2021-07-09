@@ -51,8 +51,7 @@ class InputForPlayer:
 	func _init(_input: Dictionary, _predicted: bool) -> void:
 		input = _input
 		predicted = _predicted
-		if not input.has('$'):
-			input['$'] = _calculate_cleaned_hash()
+		input['$'] = _calculate_cleaned_hash()
 	
 	# Calculates the input hash without any keys that start with '_' (if string)
 	# or less than 0 (if integer) to allow some properties to not count when
@@ -105,7 +104,7 @@ class InputBufferFrame:
 class StateBufferFrame:
 	var tick: int
 	var data: Dictionary
-	
+
 	func _init(_tick, _data) -> void:
 		tick = _tick
 		data = _data
@@ -120,12 +119,12 @@ var peers := {}
 var input_buffer := []
 var state_buffer := []
 
-var max_buffer_size := 60
+var max_buffer_size := 20
 var ticks_to_calculate_advantage := 60
 var input_delay := 2 setget set_input_delay
-var max_messages_per_rpc := 3
-var max_rpcs_per_tick := 5
-var max_input_buffer_underruns := 10
+var max_input_frames_per_message := 3
+var max_messages_per_tick := 5
+var max_input_buffer_underruns := 120
 var rollback_debug_ticks := 0
 var debug_message_bytes := 500
 var log_state := false
@@ -151,13 +150,18 @@ var _logged_remote_state: Dictionary
 
 signal sync_started ()
 signal sync_stopped ()
+signal sync_lost ()
+signal sync_regained ()
 signal sync_error (msg)
+
 signal skip_ticks_flagged (count)
 signal rollback_flagged (tick, peer_id, local_input, remote_input)
 signal remote_state_mismatch (tick, peer_id, local_state, remote_state)
+
 signal peer_added (peer_id)
 signal peer_removed (peer_id)
 signal peer_pinged_back (peer)
+
 signal state_loaded (rollback_ticks)
 signal tick_finished (is_rollback)
 signal scene_spawned (name, spawned_node, scene, data)
@@ -397,10 +401,6 @@ func _save_current_state() -> void:
 	var state_data = _call_save_state()
 	state_buffer.append(StateBufferFrame.new(current_tick, state_data))
 	
-	while state_buffer.size() > max_buffer_size:
-		state_buffer.pop_front()
-		_state_buffer_start_tick += 1
-	
 	if log_state and not get_tree().is_network_server() and is_player_input_complete(current_tick):
 		rpc_id(1, "_log_saved_state", current_tick, state_data)
 
@@ -439,31 +439,44 @@ func _get_or_create_input_frame(tick: int) -> InputBufferFrame:
 		if input_frame == null:
 			return _handle_fatal_error("Requested input frame (%s) not found in buffer" % tick)
 	
+	return input_frame
+
+func _cleanup_buffers() -> bool:
+	# Clean-up old state buffer frames.
+	while state_buffer.size() > max_buffer_size:
+		var state_frame_to_retire: StateBufferFrame = state_buffer[0]
+		var input_frame = get_input_frame(state_frame_to_retire.tick + 1)
+		if input_frame == null or not input_frame.is_complete(peers):
+			var missing: Array = input_frame.get_missing_peers(peers)
+			print ("Attempting to retire state frame %s, but input frame %s is still missing input (missing peer(s): %s)" % [state_frame_to_retire.tick, input_frame.tick, missing])
+			return false
+		
+		state_buffer.pop_front()
+		_state_buffer_start_tick += 1
+	
 	# Clean-up old input buffer frames. Unlike state frames, we can have many
 	# frames from the future if we are running behind. We don't want having too
 	# many future frames to end up discarding input for the current frame, so we
 	# only count input frames before the current frame towards the buffer size.
-	while (current_tick - _input_buffer_start_tick) > max_buffer_size:
+	# Also, at full latency, we need to retain twice as many input frames as
+	# state frames, because we could it could be RTT to ack an input frame.
+	var min_next_tick_requested = _calculate_minimum_next_tick_requested()
+	while (current_tick - _input_buffer_start_tick) > max_buffer_size * 2:
 		var input_frame_to_retire = input_buffer[0]
-		if not input_frame_to_retire.is_complete(peers):
-			input_buffer_underruns += 1
-			var missing: Array = input_frame_to_retire.get_missing_peers(peers)
-			if input_buffer_underruns > max_input_buffer_underruns:
-				return _handle_fatal_error("Retired an incomplete input frame %s (missing peer(s): %s)" % [input_frame_to_retire.tick, missing])
-			print ("Input buffer underrun")
-			# Resend input to this peer - if we're missing their input, they're
-			# probably missing ours too.
-			for peer_id in missing:
-				_send_input_to_peer(peer_id, true)
-			if not _calculate_skip_ticks(true):
-				skip_ticks = 10
-				emit_signal("skip_ticks_flagged", skip_ticks)
-		else:
-			_input_buffer_start_tick += 1
-			input_buffer.pop_front()
-			input_buffer_underruns = 0
+		
+		if input_frame_to_retire.tick >= min_next_tick_requested:
+			var peer_ids := []
+			for peer_id in peers:
+				var peer = peers[peer_id]
+				if peer.next_local_tick_requested == min_next_tick_requested:
+					peer_ids.append(peer_id)
+			print ("Attempting to retire input frame %s still requested by peer(s): %s" % [min_next_tick_requested, peer_ids])
+			return false
+		
+		_input_buffer_start_tick += 1
+		input_buffer.pop_front()
 	
-	return input_frame
+	return true
 
 func get_input_frame(tick: int) -> InputBufferFrame:
 	if tick < _input_buffer_start_tick:
@@ -514,29 +527,18 @@ func is_player_input_complete(tick: int) -> bool:
 func is_current_player_input_complete() -> bool:
 	return is_player_input_complete(current_tick)
 
-func _get_input_messages_for_peer(peer: Peer, disable_max_rpcs: bool = false) -> Array:
-	var index := 0
-	# If we no longer have the next tick they requested, we just start at 0 in
-	# the buffer and hope they got that input frame from a previous message.
-	if peer.next_local_tick_requested > _input_buffer_start_tick:
-		index = peer.next_local_tick_requested - _input_buffer_start_tick
-	
-	# Only send a certain amount of RPCs and messages per tick.
-	var max_messages = (max_messages_per_rpc * max_rpcs_per_tick)
-	if not disable_max_rpcs and input_tick - (_input_buffer_start_tick + index) > max_messages:
-		index = input_tick - _input_buffer_start_tick - max_messages
+func _get_input_messages_in_range(first_index: int, last_index: int) -> Array:
+	var all_messages := []
 	
 	var local_peer_id = get_tree().get_network_unique_id()
 	
-	var all_messages := []
 	var msg := {}
-	while index < input_buffer.size():
+	var index := first_index
+	while index <= last_index:
 		var input_frame: InputBufferFrame = input_buffer[index]
-		if not input_frame.players.has(local_peer_id):
-			break
 		msg[input_frame.tick] = _map_input_paths(input_frame.players[local_peer_id].input)
 		
-		if max_messages_per_rpc > 0 and msg.size() >= max_messages_per_rpc:
+		if max_input_frames_per_message > 0 and msg.size() == max_input_frames_per_message:
 			all_messages.push_front(msg)
 			msg = {}
 		
@@ -545,12 +547,21 @@ func _get_input_messages_for_peer(peer: Peer, disable_max_rpcs: bool = false) ->
 	if msg.size() > 0:
 		all_messages.push_front(msg)
 	
-	if all_messages.size() > 0:
-		var first_message_keys = all_messages[0].keys()
-		var last_message_keys = all_messages[-1].keys()
-		print ("Sending %s RPCs (%s messages: ticks %s - %s)" % [all_messages.size(), first_message_keys[-1] - last_message_keys[0], last_message_keys[0], first_message_keys[-1]])
-	
 	return all_messages
+
+func _get_input_messages_for_peer(peer: Peer) -> Array:
+	var first_index := peer.next_local_tick_requested - _input_buffer_start_tick
+	var last_index := input_tick - _input_buffer_start_tick
+	var max_messages := (max_input_frames_per_message * max_messages_per_tick)
+	
+	if (last_index + 1) - first_index <= max_messages:
+		return _get_input_messages_in_range(first_index, last_index)
+	
+	var new_messages = int(ceil(max_messages_per_tick / 2.0))
+	var old_messages = int(floor(max_messages_per_tick / 2.0))
+	
+	return _get_input_messages_in_range(last_index - (new_messages * max_input_frames_per_message) + 1, last_index) + \
+		   _get_input_messages_in_range(first_index, first_index + (old_messages * max_input_frames_per_message) - 1)
 
 func _calculate_skip_ticks(force_calculate_advantage: bool = false) -> bool:
 	var max_advantage: float
@@ -572,11 +583,20 @@ func _calculate_skip_ticks(force_calculate_advantage: bool = false) -> bool:
 func _calculate_message_bytes(msg) -> int:
 	return var2bytes(msg).size()
 
-func _send_input_to_peer(peer_id: int, disable_max_rpcs: bool = false) -> void:
+func _calculate_minimum_next_tick_requested() -> int:
+	if peers.size() == 0:
+		return 0
+	var peer_list := peers.values()
+	var result: int = peer_list.pop_front().next_local_tick_requested
+	for peer in peer_list:
+		result = min(result, peer.next_local_tick_requested)
+	return result
+
+func _send_input_messages_to_peer(peer_id: int) -> void:
 	assert(peer_id != get_tree().get_network_unique_id(), "Cannot send input to ourselves")
 	var peer = peers[peer_id]
 	
-	for input in _get_input_messages_for_peer(peer, disable_max_rpcs):
+	for input in _get_input_messages_for_peer(peer):
 		var msg = {
 			InputMessageKey.NEXT_TICK_REQUESTED: peer.last_remote_tick_received + 1,
 			InputMessageKey.INPUT: input,
@@ -590,9 +610,9 @@ func _send_input_to_peer(peer_id: int, disable_max_rpcs: bool = false) -> void:
 		
 		rpc_unreliable_id(peer_id, "_rit", msg)
 
-func _send_input_to_all_peers() -> void:
+func _send_input_messages_to_all_peers() -> void:
 	for peer_id in peers:
-		_send_input_to_peer(peer_id)
+		_send_input_messages_to_peer(peer_id)
 
 func _physics_process(delta: float) -> void:
 	if not started:
@@ -630,6 +650,17 @@ func _physics_process(delta: float) -> void:
 	if get_tree().is_network_server() and _logged_remote_state.size() > 0:
 		_process_logged_remote_state()
 	
+	if not _cleanup_buffers():
+		if input_buffer_underruns == 0:
+			emit_signal("sync_lost")
+		input_buffer_underruns += 1
+		if input_buffer_underruns >= max_input_buffer_underruns:
+			_handle_fatal_error("Unable to regain synchronization")
+			return
+	elif input_buffer_underruns > 0:
+		emit_signal("sync_regained")
+		input_buffer_underruns = 0
+	
 	if skip_ticks > 0:
 		skip_ticks -= 1
 		if skip_ticks == 0:
@@ -637,7 +668,7 @@ func _physics_process(delta: float) -> void:
 				peer.clear_advantage()
 		else:
 			# Even when we're skipping ticks, still send input.
-			_send_input_to_all_peers()
+			_send_input_messages_to_all_peers()
 			return
 	
 	if _calculate_skip_ticks():
@@ -654,7 +685,7 @@ func _physics_process(delta: float) -> void:
 		
 	var local_input = _call_get_local_input()
 	input_frame.players[get_tree().get_network_unique_id()] = InputForPlayer.new(local_input, false)
-	_send_input_to_all_peers()
+	_send_input_messages_to_all_peers()
 	
 	if current_tick > 0:
 		_do_tick(delta)
