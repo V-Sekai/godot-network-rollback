@@ -123,11 +123,11 @@ var state_buffer := []
 var max_buffer_size := 20
 var ticks_to_calculate_advantage := 60
 var input_delay := 2 setget set_input_delay
-var max_input_frames_per_message := 3
-var max_messages_per_tick := 5
+var max_input_frames_per_message := 5
+var max_messages_per_tick := 2
 var max_input_buffer_underruns := 300
 var rollback_debug_ticks := 0
-var debug_message_bytes := 500
+var debug_message_bytes := 640
 var log_state := false
 
 # In seconds, because we don't want it to be dependent on the network tick.
@@ -169,6 +169,7 @@ signal scene_spawned (name, spawned_node, scene, data)
 
 func _ready() -> void:
 	get_tree().connect("network_peer_disconnected", self, "remove_peer")
+	get_tree().connect("server_disconnected", self, "stop")
 	
 	_ping_timer = Timer.new()
 	_ping_timer.name = "PingTimer"
@@ -219,6 +220,8 @@ func remove_peer(peer_id: int) -> void:
 	if peers.has(peer_id):
 		peers.erase(peer_id)
 		emit_signal("peer_removed", peer_id)
+	if peers.size() == 0:
+		stop()
 
 func clear_peers() -> void:
 	for peer_id in peers.keys().duplicate():
@@ -449,7 +452,7 @@ func _cleanup_buffers() -> bool:
 		var input_frame = get_input_frame(state_frame_to_retire.tick + 1)
 		if input_frame == null or not input_frame.is_complete(peers):
 			var missing: Array = input_frame.get_missing_peers(peers)
-			print ("Attempting to retire state frame %s, but input frame %s is still missing input (missing peer(s): %s)" % [state_frame_to_retire.tick, input_frame.tick, missing])
+			push_warning("Attempting to retire state frame %s, but input frame %s is still missing input (missing peer(s): %s)" % [state_frame_to_retire.tick, input_frame.tick, missing])
 			return false
 		
 		state_buffer.pop_front()
@@ -471,7 +474,7 @@ func _cleanup_buffers() -> bool:
 				var peer = peers[peer_id]
 				if peer.next_local_tick_requested == min_next_tick_requested:
 					peer_ids.append(peer_id)
-			print ("Attempting to retire input frame %s still requested by peer(s): %s" % [min_next_tick_requested, peer_ids])
+			push_warning("Attempting to retire input frame %s still requested by peer(s): %s" % [min_next_tick_requested, peer_ids])
 			return false
 		
 		_input_buffer_start_tick += 1
@@ -563,16 +566,22 @@ func _get_input_messages_for_peer(peer: Peer) -> Array:
 	return _get_input_messages_in_range(last_index - (new_messages * max_input_frames_per_message) + 1, last_index, true) + \
 		   _get_input_messages_in_range(first_index, first_index + (old_messages * max_input_frames_per_message) - 1)
 
-func _calculate_skip_ticks(force_calculate_advantage: bool = false) -> bool:
+func _record_advantage(force_calculate_advantage: bool = false) -> void:
 	var max_advantage: float
 	for peer in peers.values():
 		# Number of frames we are predicting for this peer.
-		peer.local_lag = (input_tick + 1) - peer.last_remote_tick_received
+		peer.local_lag = (current_tick + 1) - peer.last_remote_tick_received
 		# Calculate the advantage the peer has over us.
 		peer.record_advantage(ticks_to_calculate_advantage if not force_calculate_advantage else 0)
 		# Attempt to find the greatest advantage.
 		max_advantage = max(max_advantage, peer.calculated_advantage)
-		
+
+func _calculate_skip_ticks() -> bool:
+	# Attempt to find the greatest advantage.
+	var max_advantage: float
+	for peer in peers.values():
+		max_advantage = max(max_advantage, peer.calculated_advantage)
+	
 	if max_advantage >= 2.0 and skip_ticks == 0:
 		skip_ticks = int(max_advantage / 2)
 		emit_signal("skip_ticks_flagged", skip_ticks)
@@ -586,7 +595,7 @@ func _calculate_message_bytes(msg) -> int:
 func _calculate_minimum_next_tick_requested() -> int:
 	if peers.size() == 0:
 		return 0
-	var peer_list := peers.values()
+	var peer_list := peers.values().duplicate()
 	var result: int = peer_list.pop_front().next_local_tick_requested
 	for peer in peer_list:
 		result = min(result, peer.next_local_tick_requested)
@@ -653,6 +662,8 @@ func _physics_process(delta: float) -> void:
 	if get_tree().is_network_server() and _logged_remote_state.size() > 0:
 		_process_logged_remote_state()
 	
+	_record_advantage()
+	
 	if not _cleanup_buffers():
 		if input_buffer_underruns == 0:
 			emit_signal("sync_lost")
@@ -662,11 +673,12 @@ func _physics_process(delta: float) -> void:
 			return
 		# Even when we're skipping ticks, still send input.
 		_send_input_messages_to_all_peers()
+		return
 	elif input_buffer_underruns > 0:
 		emit_signal("sync_regained")
 		input_buffer_underruns = 0
 		# We may need to still skip a few ticks to account for our latency
-		_calculate_skip_ticks(true)
+		_calculate_skip_ticks()
 	
 	if skip_ticks > 0:
 		skip_ticks -= 1
@@ -679,6 +691,7 @@ func _physics_process(delta: float) -> void:
 			return
 	
 	if _calculate_skip_ticks():
+		# This means we need to skip some ticks, so may as well start now!
 		return
 	
 	input_tick += 1
