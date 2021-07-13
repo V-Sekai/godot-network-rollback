@@ -157,6 +157,7 @@ var max_input_frames_per_message := 5
 var max_messages_per_tick := 2
 var max_input_buffer_underruns := 300
 var skip_ticks_after_sync_regained := 10
+var interpolation := true
 var rollback_debug_ticks := 0
 var debug_message_bytes := 700
 var log_state := false
@@ -177,6 +178,8 @@ var _input_buffer_start_tick: int
 var _state_buffer_start_tick: int
 var _input_send_queue := []
 var _input_send_queue_start_tick: int
+var _interpolation_state := {}
+var _interpolation_delta := 0.0
 var _logged_remote_state: Dictionary
 
 signal sync_started ()
@@ -334,6 +337,7 @@ remote func _remote_start() -> void:
 	_state_buffer_start_tick = 0
 	_input_send_queue.clear()
 	_input_send_queue_start_tick = 1
+	_interpolation_state.clear()
 	_logged_remote_state.clear()
 	started = true
 	network_adaptor.start_network_adaptor(self)
@@ -359,6 +363,7 @@ remotesync func _remote_stop() -> void:
 	_state_buffer_start_tick = 0
 	_input_send_queue.clear()
 	_input_send_queue_start_tick = 0
+	_interpolation_state.clear()
 	_logged_remote_state.clear()
 	
 	for peer in peers.values():
@@ -426,6 +431,14 @@ func _call_load_state(state: Dictionary) -> void:
 			var node = get_node(node_path)
 			if node.has_method('_load_state'):
 				node._load_state(state[node_path])
+
+func _call_interpolate_state(weight: float) -> void:
+	for node_path in _interpolation_state:
+		if has_node(node_path):
+			var node = get_node(node_path)
+			if node.has_method('_interpolate_state'):
+				var states = _interpolation_state[node_path]
+				node._interpolate_state(states[0], states[1], weight)
 
 func _save_current_state() -> void:
 	assert(current_tick >= 0, "Attempting to store state for negative tick")
@@ -661,6 +674,11 @@ func _physics_process(delta: float) -> void:
 	if rollback_debug_ticks > 0 and current_tick >= rollback_debug_ticks:
 		rollback_ticks = max(rollback_ticks, rollback_debug_ticks)
 	
+	# We need to resimulate the current tick since we did a partial rollback
+	# to the previous tick in order to interpolate.
+	if interpolation and current_tick > 1:
+		rollback_ticks = max(rollback_ticks, 1)
+	
 	if rollback_ticks > 0:
 		var original_tick = current_tick
 		
@@ -753,10 +771,33 @@ func _physics_process(delta: float) -> void:
 	
 	if current_tick > 0:
 		_do_tick(delta)
+		
+		if interpolation:
+			# Capture the state data to interpolate between.
+			var to_state: Dictionary = state_buffer[-1].data
+			var from_state: Dictionary = state_buffer[-2].data
+			_interpolation_state.clear()
+			for path in to_state:
+				if from_state.has(path):
+					_interpolation_state[path] = [from_state[path], to_state[path]]
+			
+			_call_load_state(state_buffer[-2].data)
+			emit_signal("state_loaded", 0)
+			_interpolation_delta = 0.0
 
 func _process(delta: float) -> void:
-	if started:
-		network_adaptor.poll()
+	if not started:
+		return
+	
+	network_adaptor.poll()
+	
+	if interpolation:
+		_interpolation_delta += delta
+		var weight: float = _interpolation_delta / (1.0 / Engine.iterations_per_second)
+		if weight > 1.0:
+			weight = 1.0
+		#print (weight)
+		_call_interpolate_state(weight)
 
 # Calculates the input hash without any keys that start with '_' (if string)
 # or less than 0 (if integer) to allow some properties to not count when
