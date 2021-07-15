@@ -154,10 +154,10 @@ var max_buffer_size := 20
 var ticks_to_calculate_advantage := 60
 var input_delay := 2 setget set_input_delay
 var max_input_frames_per_message := 5
-var max_messages_per_tick := 2
+var max_messages_at_once := 2
 var max_input_buffer_underruns := 300
-var skip_ticks_after_sync_regained := 10
-var interpolation := true
+var skip_ticks_after_sync_regained := 0
+var interpolation := false
 var rollback_debug_ticks := 0
 var debug_message_bytes := 700
 var log_state := false
@@ -174,12 +174,13 @@ var started := false setget _set_readonly_variable
 
 var _ping_timer: Timer
 var _spawn_manager
+var _tick_time: float
 var _input_buffer_start_tick: int
 var _state_buffer_start_tick: int
 var _input_send_queue := []
 var _input_send_queue_start_tick: int
 var _interpolation_state := {}
-var _interpolation_delta := 0.0
+var _time_since_last_tick := 0.0
 var _logged_remote_state: Dictionary
 
 signal sync_started ()
@@ -325,7 +326,7 @@ func start() -> void:
 		yield(get_tree().create_timer(highest_rtt / 2000.0), 'timeout')
 		_remote_start()
 
-remote func _remote_start() -> void:
+func _reset() -> void:
 	input_tick = 0
 	current_tick = input_tick - input_delay
 	skip_ticks = 0
@@ -338,7 +339,12 @@ remote func _remote_start() -> void:
 	_input_send_queue.clear()
 	_input_send_queue_start_tick = 1
 	_interpolation_state.clear()
+	_time_since_last_tick = 0.0
 	_logged_remote_state.clear()
+
+remote func _remote_start() -> void:
+	_reset()
+	_tick_time = (1.0 / Engine.iterations_per_second)
 	started = true
 	network_adaptor.start_network_adaptor(self)
 	emit_signal("sync_started")
@@ -352,19 +358,7 @@ func stop() -> void:
 remotesync func _remote_stop() -> void:
 	network_adaptor.stop_network_adaptor(self)
 	started = false
-	input_tick = 0
-	current_tick = 0
-	skip_ticks = 0
-	rollback_ticks = 0
-	input_buffer_underruns = 0
-	input_buffer.clear()
-	state_buffer.clear()
-	_input_buffer_start_tick = 0
-	_state_buffer_start_tick = 0
-	_input_send_queue.clear()
-	_input_send_queue_start_tick = 0
-	_interpolation_state.clear()
-	_logged_remote_state.clear()
+	_reset()
 	
 	for peer in peers.values():
 		peer.clear()
@@ -387,7 +381,7 @@ func _call_get_local_input() -> Dictionary:
 				input[str(node.get_path())] = node_input
 	return input
 
-func _call_predict_remote_input(previous_input: Dictionary) -> Dictionary:
+func _call_predict_remote_input(previous_input: Dictionary, ticks_since_real_input: int) -> Dictionary:
 	var input := {}
 	var nodes: Array = get_tree().get_nodes_in_group('network_sync')
 	for node in nodes:
@@ -398,7 +392,7 @@ func _call_predict_remote_input(previous_input: Dictionary) -> Dictionary:
 		var has_predict_network_input: bool = node.has_method('_predict_remote_input')
 		if has_predict_network_input or previous_input.has(node_path_str):
 			var previous_input_for_node = previous_input.get(node_path_str, {})
-			var predicted_input_for_node = node._predict_remote_input(previous_input_for_node) if has_predict_network_input else previous_input_for_node.duplicate()
+			var predicted_input_for_node = node._predict_remote_input(previous_input_for_node, ticks_since_real_input) if has_predict_network_input else previous_input_for_node.duplicate()
 			if predicted_input_for_node.size() > 0:
 				input[node_path_str] = predicted_input_for_node
 	
@@ -462,7 +456,9 @@ func _do_tick(delta: float, is_rollback: bool = false) -> void:
 		if not input_frame.players.has(peer_id) or input_frame.players[peer_id].predicted:
 			var predicted_input := {}
 			if previous_frame:
-				predicted_input = _call_predict_remote_input(previous_frame.get_player_input(peer_id))
+				var peer: Peer = peers[peer_id]
+				var ticks_since_real_input = current_tick - peer.last_remote_tick_received
+				predicted_input = _call_predict_remote_input(previous_frame.get_player_input(peer_id), ticks_since_real_input)
 			_calculate_input_hash(predicted_input)
 			input_frame.players[peer_id] = InputForPlayer.new(predicted_input, true)
 	
@@ -587,13 +583,13 @@ func _get_input_messages_from_send_queue_in_range(first_index: int, last_index: 
 func _get_input_messages_from_send_queue_for_peer(peer: Peer) -> Array:
 	var first_index := peer.next_local_tick_requested - _input_send_queue_start_tick
 	var last_index := _input_send_queue.size() - 1
-	var max_messages := (max_input_frames_per_message * max_messages_per_tick)
+	var max_messages := (max_input_frames_per_message * max_messages_at_once)
 	
 	if (last_index + 1) - first_index <= max_messages:
 		return _get_input_messages_from_send_queue_in_range(first_index, last_index, true)
 	
-	var new_messages = int(ceil(max_messages_per_tick / 2.0))
-	var old_messages = int(floor(max_messages_per_tick / 2.0))
+	var new_messages = int(ceil(max_messages_at_once / 2.0))
+	var old_messages = int(floor(max_messages_at_once / 2.0))
 	
 	return _get_input_messages_from_send_queue_in_range(last_index - (new_messages * max_input_frames_per_message) + 1, last_index, true) + \
 		   _get_input_messages_from_send_queue_in_range(first_index, first_index + (old_messages * max_input_frames_per_message) - 1)
@@ -602,7 +598,7 @@ func _record_advantage(force_calculate_advantage: bool = false) -> void:
 	var max_advantage: float
 	for peer in peers.values():
 		# Number of frames we are predicting for this peer.
-		peer.local_lag = (current_tick + 1) - peer.last_remote_tick_received
+		peer.local_lag = (input_tick + 1) - peer.last_remote_tick_received
 		# Calculate the advantage the peer has over us.
 		peer.record_advantage(ticks_to_calculate_advantage if not force_calculate_advantage else 0)
 		# Attempt to find the greatest advantage.
@@ -651,7 +647,7 @@ func _send_input_messages_to_peer(peer_id: int) -> void:
 				push_error("Sending message w/ size %s bytes" % bytes.size())
 		
 		#var ticks = msg[InputMessageKey.INPUT].keys()
-		#print ("Sending ticks %s - %s" % [min(ticks[0], ticks[-1]), max(ticks[0], ticks[-1])])
+		#print ("[%s] Sending ticks %s - %s" % [current_tick, min(ticks[0], ticks[-1]), max(ticks[0], ticks[-1])])
 		
 		network_adaptor.send_input_tick(peer_id, bytes)
 
@@ -769,6 +765,8 @@ func _physics_process(delta: float) -> void:
 	assert(input_tick == _input_send_queue_start_tick + _input_send_queue.size() - 1, "Input send queue ticks numbers are misaligned")
 	_send_input_messages_to_all_peers()
 	
+	_time_since_last_tick = 0.0
+	
 	if current_tick > 0:
 		_do_tick(delta)
 		
@@ -781,22 +779,22 @@ func _physics_process(delta: float) -> void:
 				if from_state.has(path):
 					_interpolation_state[path] = [from_state[path], to_state[path]]
 			
+			# Return to state from the previous frame, so we can interpolate
+			# towards the state of the current frame.
 			_call_load_state(state_buffer[-2].data)
-			emit_signal("state_loaded", 0)
-			_interpolation_delta = 0.0
 
 func _process(delta: float) -> void:
 	if not started:
 		return
 	
+	_time_since_last_tick += delta
+	
 	network_adaptor.poll()
 	
 	if interpolation:
-		_interpolation_delta += delta
-		var weight: float = _interpolation_delta / (1.0 / Engine.iterations_per_second)
+		var weight: float = _time_since_last_tick / _tick_time
 		if weight > 1.0:
 			weight = 1.0
-		#print (weight)
 		_call_interpolate_state(weight)
 
 # Calculates the input hash without any keys that start with '_' (if string)

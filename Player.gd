@@ -26,5 +26,11 @@ func _get_local_input() -> Dictionary:
 	
 	return input
 
+func _predict_remote_input(previous_input: Dictionary, ticks_since_real_input: int) -> Dictionary:
+	var input = previous_input.duplicate()
+	if ticks_since_real_input > 5:
+		input.erase(PlayerInputKey.INPUT_VECTOR)
+	return input
+
 func _network_process(delta: float, input: Dictionary) -> void:
 	position += input.get(PlayerInputKey.INPUT_VECTOR, Vector2.ZERO) * 8
