@@ -1,4 +1,7 @@
 extends AnimationPlayer
+class_name NetworkAnimationPlayer
+
+export (bool) var auto_reset := true
 
 func _ready() -> void:
 	method_call_mode = AnimationPlayer.ANIMATION_METHOD_CALL_IMMEDIATE
@@ -10,7 +13,7 @@ func _network_process(delta: float, input: Dictionary) -> void:
 		advance(delta)
 
 func _save_state() -> Dictionary:
-	if is_playing():
+	if is_playing() and (not auto_reset or current_animation != 'RESET'):
 		return {
 			is_playing = true,
 			current_animation = current_animation,
@@ -24,7 +27,12 @@ func _save_state() -> Dictionary:
 		}
 
 func _load_state(state: Dictionary) -> void:
-	stop()
 	if state['is_playing']:
-		play(state['current_animation'])
+		if not is_playing() or current_animation != state['current_animation']:
+			play(state['current_animation'])
 		seek(state['current_position'], true)
+	elif is_playing():
+		if auto_reset and has_animation("RESET"):
+			play("RESET")
+		else:
+			stop()

@@ -14,8 +14,6 @@ func _ready() -> void:
 	SyncManager.connect("sync_regained", self, "_on_SyncManager_sync_regained")
 	SyncManager.connect("sync_error", self, "_on_SyncManager_sync_error")
 	
-	SyncManager.interpolation = true
-	
 	var cmdline_args = OS.get_cmdline_args()
 	if "server" in cmdline_args:
 		_on_ServerButton_pressed()

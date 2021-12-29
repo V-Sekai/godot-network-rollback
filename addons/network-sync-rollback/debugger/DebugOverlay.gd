@@ -7,17 +7,18 @@ func _ready() -> void:
 
 func _on_SyncManager_peer_removed(peer_id) -> void:
 	var peer_id_str = str(peer_id)
-	if has_node(peer_id_str):
-		var peer_status = get_node(peer_id_str)
+	var peer_status = get_node_or_null(peer_id_str)
+	if peer_status:
 		peer_status.queue_free()
 		remove_child(peer_status)
 
 func _create_or_get_peer_status(peer_id: int):
 	var peer_id_str = str(peer_id)
-	if has_node(peer_id_str):
+	var peer_status = get_node_or_null(peer_id_str)
+	if peer_status:
 		return get_node(peer_id_str)
 	
-	var peer_status = PeerStatus.instance()
+	peer_status = PeerStatus.instance()
 	peer_status.name = peer_id_str
 	add_child(peer_status)
 	
