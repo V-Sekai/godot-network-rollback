@@ -890,6 +890,8 @@ func _physics_process(delta: float) -> void:
 	
 	if _logger:
 		_logger.begin_tick(current_tick + 1)
+		_logger.data['input_complete_tick'] = _input_complete_tick
+		_logger.data['state_complete_tick'] = _state_complete_tick
 	
 	var start_time := OS.get_ticks_usec()
 	
