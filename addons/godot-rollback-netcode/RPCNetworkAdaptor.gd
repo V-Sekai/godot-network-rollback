@@ -1,4 +1,4 @@
-extends "res://addons/network-sync-rollback/NetworkAdaptor.gd"
+extends "res://addons/godot-rollback-netcode/NetworkAdaptor.gd"
 
 func send_ping(peer_id: int, msg: Dictionary) -> void:
 	rpc_unreliable_id(peer_id, "_remote_ping", msg)

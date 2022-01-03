@@ -1,7 +1,7 @@
 extends Node
 
-const DebugOverlay = preload("res://addons/network-sync-rollback/debugger/DebugOverlay.tscn")
-const DebugStateComparer = preload("res://addons/network-sync-rollback/DebugStateComparer.gd")
+const DebugOverlay = preload("res://addons/godot-rollback-netcode/debugger/DebugOverlay.tscn")
+const DebugStateComparer = preload("res://addons/godot-rollback-netcode/DebugStateComparer.gd")
 
 const JSON_INDENT = "    "
 

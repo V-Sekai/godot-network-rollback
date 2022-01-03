@@ -12,17 +12,17 @@ _global_script_classes=[ {
 "base": "AnimationPlayer",
 "class": "NetworkAnimationPlayer",
 "language": "GDScript",
-"path": "res://addons/network-sync-rollback/NetworkAnimationPlayer.gd"
+"path": "res://addons/godot-rollback-netcode/NetworkAnimationPlayer.gd"
 }, {
 "base": "Node",
 "class": "NetworkRandomNumberGenerator",
 "language": "GDScript",
-"path": "res://addons/network-sync-rollback/NetworkRandomNumberGenerator.gd"
+"path": "res://addons/godot-rollback-netcode/NetworkRandomNumberGenerator.gd"
 }, {
 "base": "Node",
 "class": "NetworkTimer",
 "language": "GDScript",
-"path": "res://addons/network-sync-rollback/NetworkTimer.gd"
+"path": "res://addons/godot-rollback-netcode/NetworkTimer.gd"
 } ]
 _global_script_class_icons={
 "NetworkAnimationPlayer": "",
@@ -38,8 +38,8 @@ config/icon="res://icon.png"
 
 [autoload]
 
-SyncDebugger="*res://addons/network-sync-rollback/SyncDebugger.gd"
-SyncManager="*res://addons/network-sync-rollback/SyncManager.gd"
+SyncDebugger="*res://addons/godot-rollback-netcode/SyncDebugger.gd"
+SyncManager="*res://addons/godot-rollback-netcode/SyncManager.gd"
 
 [debug]
 
@@ -51,7 +51,7 @@ multirun/other_window_args="client"
 
 [editor_plugins]
 
-enabled=PoolStringArray( "res://addons/multirun/plugin.cfg", "res://addons/network-sync-rollback/plugin.cfg" )
+enabled=PoolStringArray( "res://addons/multirun/plugin.cfg", "res://addons/godot-rollback-netcode/plugin.cfg" )
 
 [input]
 

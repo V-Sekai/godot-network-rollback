@@ -1,8 +1,8 @@
 tool
 extends Control
 
-const Logger = preload("res://addons/network-sync-rollback/Logger.gd")
-const LogData = preload("res://addons/network-sync-rollback/log_inspector/LogData.gd")
+const Logger = preload("res://addons/godot-rollback-netcode/Logger.gd")
+const LogData = preload("res://addons/godot-rollback-netcode/log_inspector/LogData.gd")
 
 var start_time := 0 setget set_start_time
 var cursor_time := -1 setget set_cursor_time
@@ -73,11 +73,11 @@ func set_cursor_time(_cursor_time: int) -> void:
 
 func _ready() -> void:
 	_font = DynamicFont.new()
-	_font.font_data = load("res://addons/network-sync-rollback/log_inspector/monogram_extended.ttf")
+	_font.font_data = load("res://addons/godot-rollback-netcode/log_inspector/monogram_extended.ttf")
 	_font.size = 16
 	
 	_font_big = DynamicFont.new()
-	_font_big.font_data = load("res://addons/network-sync-rollback/log_inspector/monogram_extended.ttf")
+	_font_big.font_data = load("res://addons/godot-rollback-netcode/log_inspector/monogram_extended.ttf")
 	_font_big.size = 32
 
 func _gui_input(event: InputEvent) -> void:

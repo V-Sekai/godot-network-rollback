@@ -1,7 +1,7 @@
 tool
 extends Reference
 
-const Logger = preload("res://addons/network-sync-rollback/Logger.gd")
+const Logger = preload("res://addons/godot-rollback-netcode/Logger.gd")
 
 class StateData:
 	var tick: int

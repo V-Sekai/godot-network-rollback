@@ -1,8 +1,8 @@
 tool
 extends VBoxContainer
 
-const LogData = preload("res://addons/network-sync-rollback/log_inspector/LogData.gd")
-const DebugStateComparer = preload("res://addons/network-sync-rollback/DebugStateComparer.gd")
+const LogData = preload("res://addons/godot-rollback-netcode/log_inspector/LogData.gd")
+const DebugStateComparer = preload("res://addons/godot-rollback-netcode/DebugStateComparer.gd")
 
 const JSON_INDENT = "    "
 

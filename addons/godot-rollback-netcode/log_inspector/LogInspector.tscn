@@ -1,9 +1,9 @@
 [gd_scene load_steps=5 format=2]
 
-[ext_resource path="res://addons/network-sync-rollback/log_inspector/ProgressDialog.tscn" type="PackedScene" id=1]
-[ext_resource path="res://addons/network-sync-rollback/log_inspector/LogInspector.gd" type="Script" id=2]
-[ext_resource path="res://addons/network-sync-rollback/log_inspector/StateInputViewer.tscn" type="PackedScene" id=3]
-[ext_resource path="res://addons/network-sync-rollback/log_inspector/FrameViewer.tscn" type="PackedScene" id=4]
+[ext_resource path="res://addons/godot-rollback-netcode/log_inspector/ProgressDialog.tscn" type="PackedScene" id=1]
+[ext_resource path="res://addons/godot-rollback-netcode/log_inspector/LogInspector.gd" type="Script" id=2]
+[ext_resource path="res://addons/godot-rollback-netcode/log_inspector/StateInputViewer.tscn" type="PackedScene" id=3]
+[ext_resource path="res://addons/godot-rollback-netcode/log_inspector/FrameViewer.tscn" type="PackedScene" id=4]
 
 [node name="LogInspector" type="WindowDialog"]
 margin_right = 600.0

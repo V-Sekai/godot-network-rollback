@@ -1,6 +1,6 @@
 extends HBoxContainer
 
-const PeerStatus = preload("res://addons/network-sync-rollback/debugger/PeerStatus.tscn")
+const PeerStatus = preload("res://addons/godot-rollback-netcode/debugger/PeerStatus.tscn")
 
 func _ready() -> void:
 	SyncManager.connect("peer_removed", self, "_on_SyncManager_peer_removed")

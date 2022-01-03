@@ -1,7 +1,7 @@
 tool
 extends VBoxContainer
 
-const LogData = preload("res://addons/network-sync-rollback/log_inspector/LogData.gd")
+const LogData = preload("res://addons/godot-rollback-netcode/log_inspector/LogData.gd")
 
 onready var canvas = $Canvas
 onready var scroll_bar = $ScrollBar

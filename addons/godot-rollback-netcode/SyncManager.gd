@@ -1,11 +1,11 @@
 extends Node
 
-const SpawnManager = preload("res://addons/network-sync-rollback/SpawnManager.gd")
-const SoundManager = preload("res://addons/network-sync-rollback/SoundManager.gd")
-const NetworkAdaptor = preload("res://addons/network-sync-rollback/NetworkAdaptor.gd")
-const MessageSerializer = preload("res://addons/network-sync-rollback/MessageSerializer.gd")
-const HashSerializer = preload("res://addons/network-sync-rollback/HashSerializer.gd")
-const Logger = preload("res://addons/network-sync-rollback/Logger.gd")
+const SpawnManager = preload("res://addons/godot-rollback-netcode/SpawnManager.gd")
+const SoundManager = preload("res://addons/godot-rollback-netcode/SoundManager.gd")
+const NetworkAdaptor = preload("res://addons/godot-rollback-netcode/NetworkAdaptor.gd")
+const MessageSerializer = preload("res://addons/godot-rollback-netcode/MessageSerializer.gd")
+const HashSerializer = preload("res://addons/godot-rollback-netcode/HashSerializer.gd")
+const Logger = preload("res://addons/godot-rollback-netcode/Logger.gd")
 
 class Peer extends Reference:
 	var peer_id: int
@@ -133,9 +133,9 @@ class StateHashFrame:
 				missing.append(peer_id)
 		return missing
 
-const DEFAULT_NETWORK_ADAPTOR_PATH := "res://addons/network-sync-rollback/RPCNetworkAdaptor.gd"
-const DEFAULT_MESSAGE_SERIALIZER_PATH := "res://addons/network-sync-rollback/MessageSerializer.gd"
-const DEFAULT_HASH_SERIALIZER_PATH := "res://addons/network-sync-rollback/HashSerializer.gd"
+const DEFAULT_NETWORK_ADAPTOR_PATH := "res://addons/godot-rollback-netcode/RPCNetworkAdaptor.gd"
+const DEFAULT_MESSAGE_SERIALIZER_PATH := "res://addons/godot-rollback-netcode/MessageSerializer.gd"
+const DEFAULT_HASH_SERIALIZER_PATH := "res://addons/godot-rollback-netcode/HashSerializer.gd"
 
 var network_adaptor: NetworkAdaptor setget set_network_adaptor
 var message_serializer: MessageSerializer setget set_message_serializer

@@ -1,8 +1,8 @@
 tool
 extends Control
 
-const Logger = preload("res://addons/network-sync-rollback/Logger.gd")
-const LogData = preload("res://addons/network-sync-rollback/log_inspector/LogData.gd")
+const Logger = preload("res://addons/godot-rollback-netcode/Logger.gd")
+const LogData = preload("res://addons/godot-rollback-netcode/log_inspector/LogData.gd")
 
 onready var time_field = $VBoxContainer/HBoxContainer/Time
 onready var data_graph = $VBoxContainer/DataGraph

@@ -1,9 +1,9 @@
 tool
 extends WindowDialog
 
-const LogData = preload("res://addons/network-sync-rollback/log_inspector/LogData.gd")
-const DataGraph = preload("res://addons/network-sync-rollback/log_inspector/FrameDataGraph.gd")
-const TimeOffsetSetting = preload("res://addons/network-sync-rollback/log_inspector/FrameViewerTimeOffsetSetting.tscn")
+const LogData = preload("res://addons/godot-rollback-netcode/log_inspector/LogData.gd")
+const DataGraph = preload("res://addons/godot-rollback-netcode/log_inspector/FrameDataGraph.gd")
+const TimeOffsetSetting = preload("res://addons/godot-rollback-netcode/log_inspector/FrameViewerTimeOffsetSetting.tscn")
 
 onready var show_network_arrows_field := $MarginContainer/GridContainer/ShowNetworkArrows
 onready var network_arrows_peer1_field := $MarginContainer/GridContainer/NetworkArrowsPeer1
