@@ -32,7 +32,7 @@ _global_script_class_icons={
 
 [application]
 
-config/name="UDP Rollback"
+config/name="Godot Rollback Netcode Demo"
 run/main_scene="res://Main.tscn"
 config/icon="res://icon.png"
 
