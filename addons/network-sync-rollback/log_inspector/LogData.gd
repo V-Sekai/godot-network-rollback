@@ -250,13 +250,13 @@ func _update_start_end_times() -> void:
 	
 	peer_id = peer_ids[0]
 	start_time = peer_start_times[peer_id] + peer_time_offsets[peer_id]
-	for i in range(1, peer_start_times.size()):
+	for i in range(1, peer_ids.size()):
 		peer_id = peer_ids[i]
 		start_time = min(start_time, peer_start_times[peer_id] + peer_time_offsets[peer_id])
 	
 	peer_id = peer_ids[0]
 	end_time = peer_end_times[peer_id] + peer_time_offsets[peer_id]
-	for i in range(1, peer_end_times.size()):
+	for i in range(1, peer_ids.size()):
 		peer_id = peer_ids[i]
 		end_time = max(end_time, peer_end_times[peer_id] + peer_time_offsets[peer_id])
 
