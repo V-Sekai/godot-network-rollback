@@ -61,6 +61,21 @@ func _enter_tree() -> void:
 	log_inspector = LogInspector.instance()
 	get_editor_interface().get_base_control().add_child(log_inspector)
 	add_tool_menu_item("Log inspector...", self, "open_log_inspector")
+	
+	if not ProjectSettings.has_setting("input/sync_debug"):
+		var sync_debug = InputEventKey.new()
+		sync_debug.scancode = KEY_F11
+		
+		ProjectSettings.set_setting("input/sync_debug", {
+			deadzone = 0.5,
+			events = [
+				sync_debug,
+			],
+		})
+		
+		# Cause the ProjectSettingsEditor to reload the input map from the
+		# ProjectSettings.
+		get_tree().root.get_child(0).propagate_notification(EditorSettings.NOTIFICATION_EDITOR_SETTINGS_CHANGED)
 
 func open_log_inspector(ud) -> void:
 	log_inspector.popup_centered_ratio()
@@ -68,7 +83,7 @@ func open_log_inspector(ud) -> void:
 func _exit_tree() -> void:
 	remove_custom_type("NetworkTimer")
 	remove_custom_type("NetworkAnimationPlayer")
-	remove_autoload_singleton("SyncManager")
+	remove_custom_type("NetworkRandomNumberGenerator")
 	
 	remove_tool_menu_item("Log inspector...")
 	if log_inspector:
