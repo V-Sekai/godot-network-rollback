@@ -34,7 +34,7 @@ func stop():
 func _on_SyncManager_sync_stopped() -> void:
 	stop()
 
-func _network_process(_delta: float, _input: Dictionary) -> void:
+func _network_process(_input: Dictionary) -> void:
 	if not _running:
 		return
 	if ticks_left <= 0:

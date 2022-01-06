@@ -171,13 +171,13 @@ var current_tick: int = 0 setget _set_readonly_variable
 var skip_ticks: int = 0 setget _set_readonly_variable
 var rollback_ticks: int = 0 setget _set_readonly_variable
 var started := false setget _set_readonly_variable
+var tick_time: float setget _set_readonly_variable
 
 var _host_starting := false
 var _ping_timer: Timer
 var _spawn_manager
 var _sound_manager
 var _logger
-var _tick_time: float
 var _input_buffer_start_tick: int
 var _state_buffer_start_tick: int
 var _state_hashes_start_tick: int
@@ -440,7 +440,7 @@ func _reset() -> void:
 
 func _on_received_remote_start() -> void:
 	_reset()
-	_tick_time = (1.0 / Engine.iterations_per_second)
+	tick_time = (1.0 / Engine.iterations_per_second)
 	started = true
 	network_adaptor.start_network_adaptor(self)
 	emit_signal("sync_started")
@@ -501,7 +501,7 @@ func _call_predict_remote_input(previous_input: Dictionary, ticks_since_real_inp
 	
 	return input
 
-func _call_network_process(delta: float, input_frame: InputBufferFrame) -> void:
+func _call_network_process(input_frame: InputBufferFrame) -> void:
 	var nodes: Array = get_tree().get_nodes_in_group('network_sync')
 	var i = nodes.size()
 	while i > 0:
@@ -509,7 +509,7 @@ func _call_network_process(delta: float, input_frame: InputBufferFrame) -> void:
 		var node = nodes[i]
 		if node.has_method('_network_process') and node.is_inside_tree() and not node.is_queued_for_deletion():
 			var player_input = input_frame.get_player_input(node.get_network_master())
-			node._network_process(delta, player_input.get(str(node.get_path()), {}))
+			node._network_process(player_input.get(str(node.get_path()), {}))
 
 func _call_save_state() -> Dictionary:
 	var state := {}
@@ -589,7 +589,7 @@ func _update_state_hashes() -> void:
 		if _logger:
 			_logger.write_state(_last_state_hashed_tick, serialized, serialized_hash)
 
-func _do_tick(delta: float, is_rollback: bool = false) -> bool:
+func _do_tick(is_rollback: bool = false) -> bool:
 	var input_frame := get_input_frame(current_tick)
 	var previous_frame := get_input_frame(current_tick - 1)
 	
@@ -606,7 +606,7 @@ func _do_tick(delta: float, is_rollback: bool = false) -> bool:
 			_calculate_data_hash(predicted_input)
 			input_frame.players[peer_id] = InputForPlayer.new(predicted_input, true)
 	
-	_call_network_process(delta, input_frame)
+	_call_network_process(input_frame)
 	
 	# If the game was stopped during the last network process, then we return
 	# false here, to indicate that a full tick didn't complete and we need to
@@ -884,7 +884,7 @@ func _send_input_messages_to_all_peers() -> void:
 	for peer_id in peers:
 		_send_input_messages_to_peer(peer_id)
 
-func _physics_process(delta: float) -> void:
+func _physics_process(_delta: float) -> void:
 	if not started:
 		return
 	
@@ -943,7 +943,7 @@ func _physics_process(delta: float) -> void:
 		# Iterate forward until we're at the same spot we left off.
 		while rollback_ticks > 0:
 			current_tick += 1
-			if not _do_tick(delta, true):
+			if not _do_tick(true):
 				return
 			rollback_ticks -= 1
 		assert(current_tick == original_tick, "Rollback didn't return to the original tick")
@@ -1051,7 +1051,7 @@ func _physics_process(delta: float) -> void:
 		if _logger:
 			_logger.start_timing("current_tick")
 		
-		if not _do_tick(delta):
+		if not _do_tick():
 			return
 		
 		if _logger:
@@ -1097,7 +1097,7 @@ func _process(delta: float) -> void:
 		
 		# Don't interpolate if we are skipping ticks.
 		if interpolation and skip_ticks == 0:
-			var weight: float = _time_since_last_tick / _tick_time
+			var weight: float = _time_since_last_tick / tick_time
 			if weight > 1.0:
 				weight = 1.0
 			_call_interpolate_state(weight)

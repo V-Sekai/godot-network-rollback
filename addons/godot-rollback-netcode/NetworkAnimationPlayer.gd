@@ -8,9 +8,9 @@ func _ready() -> void:
 	playback_process_mode = AnimationPlayer.ANIMATION_PROCESS_MANUAL
 	add_to_group('network_sync')
 
-func _network_process(delta: float, input: Dictionary) -> void:
+func _network_process(input: Dictionary) -> void:
 	if is_playing():
-		advance(delta)
+		advance(SyncManager.tick_time)
 
 func _save_state() -> Dictionary:
 	if is_playing() and (not auto_reset or current_animation != 'RESET'):

@@ -32,5 +32,5 @@ func _predict_remote_input(previous_input: Dictionary, ticks_since_real_input: i
 		input.erase(PlayerInputKey.INPUT_VECTOR)
 	return input
 
-func _network_process(delta: float, input: Dictionary) -> void:
+func _network_process(input: Dictionary) -> void:
 	position += input.get(PlayerInputKey.INPUT_VECTOR, Vector2.ZERO) * 8
