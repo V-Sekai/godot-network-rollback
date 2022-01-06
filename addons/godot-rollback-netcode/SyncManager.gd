@@ -374,7 +374,7 @@ func _on_received_ping_back(peer_id: int, msg: Dictionary) -> void:
 	peer.time_delta = msg['remote_time'] - msg['local_time'] - (peer.rtt / 2.0)
 	emit_signal("peer_pinged_back", peer)
 
-func start_logging(log_file_name: String) -> void:
+func start_logging(log_file_path: String) -> void:
 	# Our logger needs threads!
 	if not OS.can_use_threads():
 		return
@@ -384,7 +384,7 @@ func start_logging(log_file_name: String) -> void:
 	else:
 		_logger.stop()
 	
-	if _logger.start(log_file_name, get_tree().get_network_unique_id()) != OK:
+	if _logger.start(log_file_path, get_tree().get_network_unique_id()) != OK:
 		stop_logging()
 
 func stop_logging() -> void:
