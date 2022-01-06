@@ -30,7 +30,12 @@ var _write_queue := []
 var _log_file: File
 var _started := false
 
-func _init() -> void:
+var SyncManager
+
+func _init(_sync_manager) -> void:
+	# Inject the SyncManager to prevent cyclic reference.
+	SyncManager = _sync_manager
+	
 	_writer_thread_mutex = Mutex.new()
 	_writer_thread_semaphore = Semaphore.new()
 	_writer_thread = Thread.new()

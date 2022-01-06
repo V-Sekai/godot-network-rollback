@@ -53,10 +53,11 @@ func _enter_tree() -> void:
 	_add_project_setting('network/rollback/debug/physics_process_msecs', TYPE_REAL, 10.0, PROPERTY_HINT_RANGE, "0.0, 60.0")
 	_add_project_setting('network/rollback/debug/process_msecs', TYPE_REAL, 10.0, PROPERTY_HINT_RANGE, "0.0, 60.0")
 	
-	add_custom_type("NetworkTimer", "Node", preload("res://addons/godot-rollback-netcode/NetworkTimer.gd"), null)
-	add_custom_type("NetworkAnimationPlayer", "AnimationPlayer", preload("res://addons/godot-rollback-netcode/NetworkAnimationPlayer.gd"), null)
-	add_custom_type("NetworkRandomNumberGenerator", "Node", preload("res://addons/godot-rollback-netcode/NetworkRandomNumberGenerator.gd"), null)
 	add_autoload_singleton("SyncManager", "res://addons/godot-rollback-netcode/SyncManager.gd")
+	
+	add_custom_type("NetworkTimer", "Node", load("res://addons/godot-rollback-netcode/NetworkTimer.gd"), null)
+	add_custom_type("NetworkAnimationPlayer", "AnimationPlayer", load("res://addons/godot-rollback-netcode/NetworkAnimationPlayer.gd"), null)
+	add_custom_type("NetworkRandomNumberGenerator", "Node", load("res://addons/godot-rollback-netcode/NetworkRandomNumberGenerator.gd"), null)
 	
 	log_inspector = LogInspector.instance()
 	get_editor_interface().get_base_control().add_child(log_inspector)

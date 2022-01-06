@@ -380,7 +380,7 @@ func start_logging(log_file_path: String) -> void:
 		return
 	
 	if not _logger:
-		_logger = Logger.new()
+		_logger = Logger.new(self)
 	else:
 		_logger.stop()
 	
@@ -1276,6 +1276,10 @@ func sort_dictionary_keys(input: Dictionary) -> Dictionary:
 	return output
 
 func spawn(name: String, parent: Node, scene: PackedScene, data: Dictionary = {}, rename: bool = true, signal_name: String = '') -> Node:
+	if not started:
+		push_error("Refusing to spawn %s before SyncManager has started" % name)
+		return null
+	
 	return _spawn_manager.spawn(name, parent, scene, data, rename, signal_name)
 
 func despawn(node: Node) -> void:

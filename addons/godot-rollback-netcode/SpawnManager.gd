@@ -91,10 +91,6 @@ func _instance_scene(resource_path: String) -> Node:
 	return scene.instance()
 
 func spawn(name: String, parent: Node, scene: PackedScene, data: Dictionary, rename: bool = true, signal_name: String = '') -> Node:
-	if not SyncManager.started:
-		push_error("Refusing to spawn %s before SyncManager has started" % name)
-		return null
-	
 	var spawned_node = _instance_scene(scene.resource_path)
 	if signal_name == '':
 		signal_name = name
