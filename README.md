@@ -16,7 +16,7 @@ is important. :-)
 Tutorials
 ---------
 
-I'm working on a series of video tutorials on YouTube. You check back on
+I'm working on a series of video tutorials on YouTube. You can check back on
 [my channel](https://www.youtube.com/SnopekGames),
 but I'll post a more specific link once the first video is finished!
 
