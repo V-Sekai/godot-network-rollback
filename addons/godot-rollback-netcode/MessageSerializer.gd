@@ -1,13 +1,5 @@
 extends Reference
 
-# The message serializer will convert input messages to bytes in order to send
-# them to the other clients.
-#
-# The default implementation is relatively wasteful (ie. uses a lot of bytes),
-# so you probably want to replace it with an your own to pack your data as 
-# small as possible. This is only possible by knowing the structure and meaning
-# of your data.
-
 const DEFAULT_MESSAGE_BUFFER_SIZE = 1280
 
 enum InputMessageKey {

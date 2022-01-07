@@ -1,13 +1,5 @@
 extends Reference
 
-# The hash serializer will convert state or input into primitive types so that
-# we can hash the Dictionary for use in comparisons.
-#
-# The default implementation can't handle Objects in a smart way, and if you
-# include any in your input or state, it could lead to SyncManager thinking that
-# input/state doesn't match, when it does. Replace this with your own version
-# to convert any objects into a primitive type.
-
 func serialize(value):
 	if value is Dictionary:
 		return serialize_dictionary(value)
