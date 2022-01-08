@@ -1,6 +1,8 @@
 Godot Rollback Netcode
 ======================
 
+![Logo](icon.png)
+
 This is an addon for implementing rollback and prediction netcode in the Godot
 game engine.
 
@@ -545,6 +547,14 @@ If you are logging, you'll want to call `SyncManager.start_logging()` just
 before calling `SyncManager.start()`, and `SyncManager.stop_logging()` just
 after calling `SyncManager.stop()`. The logs are meant to contain data from
 just a single match, which is what the "Log inspector" tool will expect
+
+Logo credits
+------------
+
+The logo is composed of these images:
+
+- https://pxhere.com/en/photo/1451861 (License: CC0)
+- https://godotengine.org/press (License: CC-BY-4.0 by Andrea Calabró)
 
 License
 -------
