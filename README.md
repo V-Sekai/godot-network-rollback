@@ -262,15 +262,19 @@ which will cause `SyncManager` to call various virtual methods on the node:
   enabled in project settings.
 
 - `_get_local_input() -> Dictionary`: Returns the local input that this node
-  needs to operate. Not all nodes need input, in fact, most do not. This is
-  used most commonly on the node representing a player. This input will
-  be passed into `_network_process()`.
+  needs to operate. This will only be called for nodes whose "network master"
+  (set via `Node.set_network_master()`) matches the peer id of the current
+  client. Not all nodes need input, in fact, most do not. This is used most
+  commonly on the node representing a player. This input will be passed into
+  `_network_process()`.
 
 - `_predict_remote_input(previous_input: Dictionary, ticks_since_real_input: int) -> Dictionary`:
   Returns predicted remote input based on the input from the previous tick,
-  which may itself be predicted. If this method isn't provided, the same
-  input from the last tick will be used as-is.  This input will be passed
-  into `_network_process()` when using predicted input.
+  which may itself be predicted. This will only be called for nodes whose
+  "network master" DOES NOT match the peer id of the current client. If this
+  method isn't provided, the same input from the last tick will be used as-is.
+  This input will be passed into `_network_process()` when using predicted
+  input.
 
 - `_network_process(input: Dictionary) -> void`: Processes this node for the
   current tick. The input will contain data from either `_get_local_input()`
@@ -511,13 +515,17 @@ the process your game goes through to start, play and stop a match using this
 addon:
 
 1. Get all players connected via Godot's
-   [High-Level Multiplayer API](https://docs.godotengine.org/en/stable/tutorials/networking/high_level_multiplayer.html)
+   [High-Level Multiplayer API](https://docs.godotengine.org/en/stable/tutorials/networking/high_level_multiplayer.html).
 
 2. Call `SyncManager.add_peer()` for each peer in the match.
 
 3. Initialize the match to its initial state on all clients. Sharing match
    configuration and letting the "host" know when each client is ready to
-   start can be done using Godot's RPC mechanism.
+   start can be done using Godot's RPC mechanism. Make sure that all nodes
+   representing players have their "network master" set (via
+   `set_network_master()`) to the peer id of the client that is local for that
+   player, so that the virtual `_get_local_input()` and
+   `_predict_remote_input()` methods will be called.
 
 4. Call `SyncManager.start()` on the "host".
 
