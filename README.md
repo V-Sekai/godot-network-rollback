@@ -80,9 +80,9 @@ section called "Virtual methods" below for more information.)
   update during rollback to be the tick that is presently being re-executed.
 
 - `input_tick: int`: The tick we are currently gathering local input for. If
-  there is an input delay configured in Project Settings, this be ahead of
-  `current_tick` by the number of frames of input delay. This doesn't change
-  during rollback.
+  there is an input delay configured in Project Settings, this will be ahead
+  of `current_tick` by the number of frames of input delay. This doesn't
+  change during rollback.
 
 - `started: bool`: will be true if synchronization has started; otherwise
   it'll be false. This property is read-only - you should call the `start()`
