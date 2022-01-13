@@ -44,6 +44,8 @@ Games using this addon
 ----------------------
 
 - [Retro Tank Party](https://www.snopekgames.com/games/retro-tank-party)
+- [Kronian Titans](http://www.kroniantitans.com/)
+- [Castagne (Fighting Game Creator)](http://castagneengine.com)
 
 If you release a game using this addon, please make an MR (Merge Request) to
 add it to the list!
