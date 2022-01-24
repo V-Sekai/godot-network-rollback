@@ -20,10 +20,6 @@ func _ready() -> void:
 	
 	add_to_group('network_sync')
 
-func setup_spawn_manager(SyncManager) -> void:
-	SyncManager.connect("sync_started", self, "_on_SyncManager_sync_started")
-	SyncManager.connect("sync_stopped", self, "_on_SyncManager_sync_stopped")
-
 func reset() -> void:
 	spawn_records.clear()
 	node_scenes.clear()
@@ -37,12 +33,6 @@ func reset() -> void:
 		for node in nodes:
 			node.queue_free()
 	retired_nodes.clear()
-
-func _on_SyncManager_sync_started() -> void:
-	reset()
-
-func _on_SyncManager_sync_stopped() -> void:
-	reset()
 
 func _rename_node(name: String) -> String:
 	if not counter.has(name):

@@ -254,7 +254,6 @@ func _ready() -> void:
 	_spawn_manager = SpawnManager.new()
 	_spawn_manager.name = "SpawnManager"
 	add_child(_spawn_manager)
-	_spawn_manager.setup_spawn_manager(self)
 	_spawn_manager.connect("scene_spawned", self, "_on_SpawnManager_scene_spawned")
 	
 	_sound_manager = SoundManager.new()
@@ -443,6 +442,7 @@ func _on_received_remote_start() -> void:
 	tick_time = (1.0 / Engine.iterations_per_second)
 	started = true
 	network_adaptor.start_network_adaptor(self)
+	_spawn_manager.reset()
 	emit_signal("sync_started")
 
 func stop() -> void:
@@ -465,6 +465,7 @@ func _on_received_remote_stop() -> void:
 		peer.clear()
 	
 	emit_signal("sync_stopped")
+	_spawn_manager.reset()
 
 func _handle_fatal_error(msg: String):
 	emit_signal("sync_error", msg)
