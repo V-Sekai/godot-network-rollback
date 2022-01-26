@@ -24,7 +24,7 @@ func _ready() -> void:
 
 func _on_ServerButton_pressed() -> void:
 	var peer = NetworkedMultiplayerENet.new()
-	peer.create_server(int(port_field.text), 2)
+	peer.create_server(int(port_field.text), 1)
 	get_tree().network_peer = peer
 	connection_panel.visible = false
 
