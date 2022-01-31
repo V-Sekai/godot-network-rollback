@@ -18,9 +18,15 @@ is important. :-)
 Tutorials
 ---------
 
-I'm working on a series of video tutorials on YouTube. You can check back on
-[my channel](https://www.youtube.com/SnopekGames),
-but I'll post a more specific link once the first video is finished!
+I'm working on a series of video tutorials on YouTube - here's the
+[playlist](https://www.youtube.com/playlist?list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir),
+and these are the parts that are published as of the last time this README was
+updated:
+
+- [Rollback netcode in Godot (part 1): What is rollback and prediction?](https://www.youtube.com/watch?v=zvqQPbT8rAE&list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir&index=2&t=343s)
+- [Rollback netcode in Godot (part 2): Getting Started with the Godot Rollback Netcode addon!](https://www.youtube.com/watch?v=NsA-lz2B5Sw&list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir&index=3&t=634s)
+
+More videos are coming soon!
 
 Installing
 ----------
