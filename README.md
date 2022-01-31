@@ -261,6 +261,15 @@ which will cause `SyncManager` to call various virtual methods on the node:
 - `_save_state() -> Dictionary`: Returns the current node state. This same
   state will be passed to `_load_state()` when performing a rollback.
 
+  _Warning: Don't put any `Reference`s, `Object`s, `Array`s or `Dictionary`s
+  into state, unless you can duplicate them first. This is because changing
+  the object later will change the data in the state buffer too. And NEVER
+  put `Node`s in state, instead use the node path, or some other way to
+  locate the right node later, since the original node may no longer even
+  exist. Any `Object`s put into state will need special support in your
+  `HashSerializer` (see below) to prevent incorrectly detecting state
+  mismatches._
+
 - `_load_state(state: Dictionary) -> void`: Called to roll the node back to a
   previous state, which originated from this node's `_save_state()` method.
 
