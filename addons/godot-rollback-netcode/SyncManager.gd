@@ -323,11 +323,11 @@ func set_input_delay(_input_delay: int) -> void:
 
 func add_peer(peer_id: int) -> void:
 	assert(not peers.has(peer_id), "Peer with given id already exists")
-	assert(peer_id != get_tree().get_network_unique_id(), "Cannot add ourselves as a peer in SyncManager")
+	assert(peer_id != network_adaptor.get_network_unique_id(), "Cannot add ourselves as a peer in SyncManager")
 	
 	if peers.has(peer_id):
 		return
-	if peer_id == get_tree().get_network_unique_id():
+	if peer_id == network_adaptor.get_network_unique_id():
 		return
 	
 	peers[peer_id] = Peer.new(peer_id)
@@ -357,11 +357,11 @@ func _on_ping_timer_timeout() -> void:
 		local_time = OS.get_system_time_msecs(),
 	}
 	for peer_id in peers:
-		assert(peer_id != get_tree().get_network_unique_id(), "Cannot ping ourselves")
+		assert(peer_id != network_adaptor.get_network_unique_id(), "Cannot ping ourselves")
 		network_adaptor.send_ping(peer_id, msg)
 
 func _on_received_ping(peer_id: int, msg: Dictionary) -> void:
-	assert(peer_id != get_tree().get_network_unique_id(), "Cannot ping back ourselves")
+	assert(peer_id != network_adaptor.get_network_unique_id(), "Cannot ping back ourselves")
 	msg['remote_time'] = OS.get_system_time_msecs()
 	network_adaptor.send_ping_back(peer_id, msg)
 
@@ -383,7 +383,7 @@ func start_logging(log_file_path: String) -> void:
 	else:
 		_logger.stop()
 	
-	if _logger.start(log_file_path, get_tree().get_network_unique_id()) != OK:
+	if _logger.start(log_file_path, network_adaptor.get_network_unique_id()) != OK:
 		stop_logging()
 
 func stop_logging() -> void:
@@ -392,10 +392,10 @@ func stop_logging() -> void:
 		_logger = null
 
 func start() -> void:
-	assert(get_tree().is_network_server(), "start() should only be called on the host")
+	assert(network_adaptor.is_network_host(), "start() should only be called on the host")
 	if started or _host_starting:
 		return
-	if get_tree().is_network_server():
+	if network_adaptor.is_network_host():
 		var highest_rtt: int = 0
 		for peer in peers.values():
 			highest_rtt = max(highest_rtt, peer.rtt)
@@ -446,7 +446,7 @@ func _on_received_remote_start() -> void:
 	emit_signal("sync_started")
 
 func stop() -> void:
-	if get_tree().is_network_server():
+	if network_adaptor.is_network_host():
 		for peer_id in peers:
 			network_adaptor.send_remote_stop(peer_id)
 	
@@ -479,7 +479,7 @@ func _call_get_local_input() -> Dictionary:
 	var input := {}
 	var nodes: Array = get_tree().get_nodes_in_group('network_sync')
 	for node in nodes:
-		if node.is_network_master() and node.has_method('_get_local_input') and node.is_inside_tree() and not node.is_queued_for_deletion():
+		if network_adaptor.is_network_master_for_node(node) and node.has_method('_get_local_input') and node.is_inside_tree() and not node.is_queued_for_deletion():
 			var node_input = node._get_local_input()
 			if node_input.size() > 0:
 				input[str(node.get_path())] = node_input
@@ -489,7 +489,7 @@ func _call_predict_remote_input(previous_input: Dictionary, ticks_since_real_inp
 	var input := {}
 	var nodes: Array = get_tree().get_nodes_in_group('network_sync')
 	for node in nodes:
-		if node.is_network_master():
+		if network_adaptor.is_network_master_for_node(node):
 			continue
 		
 		var node_path_str := str(node.get_path())
@@ -840,7 +840,7 @@ func _calculate_minimum_next_input_tick_requested() -> int:
 	return result
 
 func _send_input_messages_to_peer(peer_id: int) -> void:
-	assert(peer_id != get_tree().get_network_unique_id(), "Cannot send input to ourselves")
+	assert(peer_id != network_adaptor.get_network_unique_id(), "Cannot send input to ourselves")
 	var peer = peers[peer_id]
 	
 	var state_hashes = _get_state_hashes_for_peer(peer)
@@ -1043,7 +1043,7 @@ func _physics_process(_delta: float) -> void:
 	
 	var local_input = _call_get_local_input()
 	_calculate_data_hash(local_input)
-	input_frame.players[get_tree().get_network_unique_id()] = InputForPlayer.new(local_input, false)
+	input_frame.players[network_adaptor.get_network_unique_id()] = InputForPlayer.new(local_input, false)
 	_input_send_queue.append(message_serializer.serialize_input(local_input))
 	assert(input_tick == _input_send_queue_start_tick + _input_send_queue.size() - 1, "Input send queue ticks numbers are misaligned")
 	_send_input_messages_to_all_peers()
