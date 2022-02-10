@@ -52,6 +52,7 @@ func _enter_tree() -> void:
 	_add_project_setting('network/rollback/debug/skip_nth_message', TYPE_INT, 0, PROPERTY_HINT_RANGE, "0, 60")
 	_add_project_setting('network/rollback/debug/physics_process_msecs', TYPE_REAL, 10.0, PROPERTY_HINT_RANGE, "0.0, 60.0")
 	_add_project_setting('network/rollback/debug/process_msecs', TYPE_REAL, 10.0, PROPERTY_HINT_RANGE, "0.0, 60.0")
+	_add_project_setting('network/rollback/debug/check_message_serializer_roundtrip', TYPE_BOOL, false)
 	
 	add_autoload_singleton("SyncManager", "res://addons/godot-rollback-netcode/SyncManager.gd")
 	

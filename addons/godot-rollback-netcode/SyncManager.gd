@@ -162,6 +162,7 @@ var debug_message_bytes := 700
 var debug_skip_nth_message := 0
 var debug_physics_process_msecs := 10.0
 var debug_process_msecs := 10.0
+var debug_check_message_serializer_roundtrip := false
 
 # In seconds, because we don't want it to be dependent on the network tick.
 var ping_frequency := 1.0 setget set_ping_frequency
@@ -238,6 +239,7 @@ func _ready() -> void:
 		debug_skip_nth_message = 'network/rollback/debug/skip_nth_message',
 		debug_physics_process_msecs = 'network/rollback/debug/physics_process_msecs',
 		debug_process_msecs = 'network/rollback/debug/process_msecs',
+		debug_check_message_serializer_roundtrip = 'network/rollback/debug/check_message_serializer_roundtrip'
 	}
 	for property_name in project_settings:
 		var setting_name = project_settings[property_name]
@@ -1058,7 +1060,16 @@ func _physics_process(_delta: float) -> void:
 	var local_input = _call_get_local_input()
 	_calculate_data_hash(local_input)
 	input_frame.players[network_adaptor.get_network_unique_id()] = InputForPlayer.new(local_input, false)
-	_input_send_queue.append(message_serializer.serialize_input(local_input))
+	var serialized_input := message_serializer.serialize_input(local_input)
+	
+	# check that the serialized then unserialized input matches the original 
+	if debug_check_message_serializer_roundtrip:
+		var unserialized_input := message_serializer.unserialize_input(serialized_input)
+		_calculate_data_hash(unserialized_input)
+		if local_input["$"] != unserialized_input["$"]:
+			push_error("The input is different after being serialized and unserialized \n Original: %s \n Unserialized: %s" % [ordered_dict2str(local_input), ordered_dict2str(unserialized_input)])
+		
+	_input_send_queue.append(serialized_input)
 	assert(input_tick == _input_send_queue_start_tick + _input_send_queue.size() - 1, "Input send queue ticks numbers are misaligned")
 	_send_input_messages_to_all_peers()
 	
@@ -1324,3 +1335,15 @@ func ensure_current_tick_input_complete() -> bool:
 	if requested_input_complete_tick == 0 or requested_input_complete_tick > current_tick:
 		requested_input_complete_tick = current_tick
 	return false
+
+func ordered_dict2str(dict: Dictionary) -> String:
+	var ret := "{"
+	for i in dict.size():
+		var key = dict.keys()[i]
+		var value = dict[key]
+		var value_str := ordered_dict2str(value) if value is Dictionary else str(value)
+		ret += "%s:%s" % [key, value_str]
+		if i != dict.size() - 1:
+			ret += ", "
+	ret += "}"
+	return ret
