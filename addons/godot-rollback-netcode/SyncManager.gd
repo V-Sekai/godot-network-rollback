@@ -170,6 +170,7 @@ var input_tick: int = 0 setget _set_readonly_variable
 var current_tick: int = 0 setget _set_readonly_variable
 var skip_ticks: int = 0 setget _set_readonly_variable
 var rollback_ticks: int = 0 setget _set_readonly_variable
+var requested_input_complete_tick: int = 0 setget _set_readonly_variable
 var started := false setget _set_readonly_variable
 var tick_time: float setget _set_readonly_variable
 
@@ -201,7 +202,8 @@ signal sync_regained ()
 signal sync_error (msg)
 
 signal skip_ticks_flagged (count)
-signal rollback_flagged (tick, peer_id, local_input, remote_input)
+signal rollback_flagged (tick)
+signal prediction_missed (tick, peer_id, local_input, remote_input)
 signal remote_state_mismatch (tick, peer_id, local_hash, remote_hash)
 
 signal peer_added (peer_id)
@@ -556,7 +558,7 @@ func _save_current_state() -> void:
 		_state_complete_tick = current_tick if current_tick <= _input_complete_tick else _input_complete_tick
 
 func _update_input_complete_tick() -> void:
-	while current_tick > _input_complete_tick + 1:
+	while input_tick >= _input_complete_tick + 1:
 		var input_frame: InputBufferFrame = get_input_frame(_input_complete_tick + 1)
 		if not input_frame:
 			break
@@ -567,6 +569,14 @@ func _update_input_complete_tick() -> void:
 			_logger.write_input(input_frame.tick, input_frame.players)
 		
 		_input_complete_tick += 1
+		
+		# This tick should be recomputed with complete inputs, let's roll back
+		if _input_complete_tick == requested_input_complete_tick:
+			requested_input_complete_tick = 0
+			var tick_delta = current_tick - _input_complete_tick
+			if tick_delta >= 0 and rollback_ticks <= tick_delta:
+				rollback_ticks = tick_delta + 1
+				emit_signal("rollback_flagged", _input_complete_tick)
 		
 		emit_signal("tick_input_complete", _input_complete_tick)
 
@@ -753,7 +763,7 @@ func _get_state_hash_frame(tick: int) -> StateHashFrame:
 	return state_hash_frame
 
 func is_current_tick_input_complete() -> bool:
-	return current_tick >= _input_complete_tick
+	return current_tick <= _input_complete_tick
 
 func _get_input_messages_from_send_queue_in_range(first_index: int, last_index: int, reverse: bool = false) -> Array:
 	var indexes = range(first_index, last_index + 1) if not reverse else range(last_index, first_index - 1, -1)
@@ -936,6 +946,10 @@ func _physics_process(_delta: float) -> void:
 		_call_load_state(state_buffer[-rollback_ticks - 1].data)
 		state_buffer.resize(state_buffer.size() - rollback_ticks)
 		current_tick -= rollback_ticks
+		
+		# Invalidate sync ticks after this, they may be asked for again
+		if requested_input_complete_tick > 0 and current_tick >= requested_input_complete_tick:
+			requested_input_complete_tick = 0
 		
 		emit_signal("state_loaded", rollback_ticks)
 		
@@ -1229,7 +1243,8 @@ func _on_received_input_tick(peer_id: int, serialized_msg: PoolByteArray) -> voi
 				# flag that we need to rollback.
 				if local_input['$'] != remote_input['$']:
 					rollback_ticks = tick_delta + 1
-					emit_signal("rollback_flagged", remote_tick, peer_id, local_input, remote_input)
+					emit_signal("prediction_missed", remote_tick, peer_id, local_input, remote_input)
+					emit_signal("rollback_flagged", remote_tick)
 			else:
 				# Otherwise, just store it.
 				input_frame.players[peer_id] = InputForPlayer.new(remote_input, false)
@@ -1302,3 +1317,10 @@ func set_default_sound_bus(bus: String) -> void:
 
 func play_sound(identifier: String, sound: AudioStream, info: Dictionary = {}) -> void:
 	_sound_manager.play_sound(identifier, sound, info)
+
+func ensure_current_tick_input_complete() -> bool:
+	if is_current_tick_input_complete():
+		return true
+	if requested_input_complete_tick == 0 or requested_input_complete_tick > current_tick:
+		requested_input_complete_tick = current_tick
+	return false
