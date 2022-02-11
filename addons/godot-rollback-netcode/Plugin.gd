@@ -56,10 +56,6 @@ func _enter_tree() -> void:
 	
 	add_autoload_singleton("SyncManager", "res://addons/godot-rollback-netcode/SyncManager.gd")
 	
-	add_custom_type("NetworkTimer", "Node", load("res://addons/godot-rollback-netcode/NetworkTimer.gd"), null)
-	add_custom_type("NetworkAnimationPlayer", "AnimationPlayer", load("res://addons/godot-rollback-netcode/NetworkAnimationPlayer.gd"), null)
-	add_custom_type("NetworkRandomNumberGenerator", "Node", load("res://addons/godot-rollback-netcode/NetworkRandomNumberGenerator.gd"), null)
-	
 	log_inspector = LogInspector.instance()
 	get_editor_interface().get_base_control().add_child(log_inspector)
 	add_tool_menu_item("Log inspector...", self, "open_log_inspector")
@@ -83,10 +79,6 @@ func open_log_inspector(ud) -> void:
 	log_inspector.popup_centered_ratio()
 
 func _exit_tree() -> void:
-	remove_custom_type("NetworkTimer")
-	remove_custom_type("NetworkAnimationPlayer")
-	remove_custom_type("NetworkRandomNumberGenerator")
-	
 	remove_tool_menu_item("Log inspector...")
 	if log_inspector:
 		log_inspector.free()
