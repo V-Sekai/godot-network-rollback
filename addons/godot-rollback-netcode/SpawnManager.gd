@@ -13,6 +13,7 @@ var reuse_despawned_nodes := false
 var is_respawning := false
 
 signal scene_spawned (name, spawned_node, scene, data)
+signal scene_despawned (name, node)
 
 func _ready() -> void:
 	if ProjectSettings.has_setting(REUSE_DESPAWNED_NODES_SETTING):
@@ -105,6 +106,8 @@ func spawn(name: String, parent: Node, scene: PackedScene, data: Dictionary, ren
 		signal_name = signal_name,
 	}
 	
+	spawned_node.set_meta('spawn_signal_name', signal_name)
+	
 	var node_path = str(spawned_node.get_path())
 	spawn_records[node_path] = spawn_record
 	spawned_nodes[node_path] = spawned_node
@@ -116,15 +119,18 @@ func spawn(name: String, parent: Node, scene: PackedScene, data: Dictionary, ren
 	
 	return spawned_node
 
-func despawn(node: Node, node_path = null) -> void:
-	if node_path == null:
-		node_path = str(node.get_path())
-	
+func despawn(node: Node) -> void:
+	_do_despawn(node, str(node.get_path()))
+
+func _do_despawn(node: Node, node_path: String) -> void:
 	if node.has_method('_network_despawn'):
 		node._network_despawn()
 	if node.get_parent():
 		node.get_parent().remove_child(node)
 	
+	var signal_name : String = node.get_meta('spawn_signal_name')
+	emit_signal("scene_despawned", signal_name, node)
+
 	if reuse_despawned_nodes and node_scenes.has(node_path) and is_instance_valid(node) and not node.is_queued_for_deletion():
 		var scene_path = node_scenes[node_path]
 		if not retired_nodes.has(scene_path):
@@ -165,7 +171,7 @@ func _load_state(state: Dictionary) -> void:
 	# Remove nodes that aren't in the state we are loading.
 	for node_path in spawned_nodes.keys().duplicate():
 		if not spawn_records.has(node_path):
-			despawn(spawned_nodes[node_path], node_path)
+			_do_despawn(spawned_nodes[node_path], node_path)
 			#print ("[LOAD %s] de-spawned: %s" % [SyncManager.current_tick, node_path])
 	
 	# Spawn nodes that don't already exist.
@@ -195,6 +201,7 @@ func _load_state(state: Dictionary) -> void:
 			spawned_nodes[node_path] = spawned_node
 			node_scenes[node_path] = spawn_record['scene']
 			
+			spawned_node.set_meta('spawn_signal_name', spawn_record['signal_name'])
 			# @todo Can we get rid of the load() and just use the path?
 			emit_signal("scene_spawned", spawn_record['signal_name'], spawned_node, load(spawn_record['scene']), spawn_record['data'])
 			#print ("[LOAD %s] re-spawned: %s" % [SyncManager.current_tick, node_path])

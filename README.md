@@ -207,6 +207,11 @@ section called "Virtual methods" below for more information.)
   if the scene is re-spawned during rollback (you want to do this most of the
   time).
 
+- `scene_despawned (name: String, node: Node)`:
+  Emitted when a scene is despawned via `SyncManager.despawn()` or due
+  to a rollback. Connect to this signal when you want to do some cleanup on a
+  scene that was despawned.
+
 - `interpolation_frame ()`: If interpolation is enabled in Project Settings,
   the work of the `SyncManager` will be split between "tick frames" (where
   input is gathered, rollbacks are performed and ticks are executed) and

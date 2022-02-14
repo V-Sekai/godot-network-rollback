@@ -216,6 +216,7 @@ signal tick_finished (is_rollback)
 signal tick_retired (tick)
 signal tick_input_complete (tick)
 signal scene_spawned (name, spawned_node, scene, data)
+signal scene_despawned (name, node)
 signal interpolation_frame ()
 
 func _ready() -> void:
@@ -259,6 +260,7 @@ func _ready() -> void:
 	_spawn_manager.name = "SpawnManager"
 	add_child(_spawn_manager)
 	_spawn_manager.connect("scene_spawned", self, "_on_SpawnManager_scene_spawned")
+	_spawn_manager.connect("scene_despawned", self, "_on_SpawnManager_scene_despawned")
 	
 	_sound_manager = SoundManager.new()
 	_sound_manager.name = "SoundManager"
@@ -1314,6 +1316,9 @@ func despawn(node: Node) -> void:
 
 func _on_SpawnManager_scene_spawned(name: String, spawned_node: Node, scene: PackedScene, data: Dictionary) -> void:
 	emit_signal("scene_spawned", name, spawned_node, scene, data)
+
+func _on_SpawnManager_scene_despawned(name: String, node: Node) -> void:
+	emit_signal("scene_despawned", name, node)
 
 func is_in_rollback() -> bool:
 	return _in_rollback
