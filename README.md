@@ -305,7 +305,15 @@ which will cause `SyncManager` to call various virtual methods on the node:
 
   This method is meant to do what `_process()` or `_physics_process()` would
   have done in most other Godot games.
- 
+
+- `_network_preprocess(input: Dictionary) -> void`: Works just like
+  `_network_process()` but all the `_network_preprocess()` methods are run
+  _before_ all the `_network_process()` methods.
+
+- `_network_postprocess(input: Dictionary) -> void`: Works just like
+  `_network_process()` but all the `_network_postprocess()` methods are run
+  _after_ all the `_network_process()` methods.
+
 The following methods are only called on scenes that are spawned/de-spawned
 using `SyncManager.spawn()` and `SyncManager.despawn()`:
 

@@ -510,13 +510,35 @@ func _call_predict_remote_input(previous_input: Dictionary, ticks_since_real_inp
 
 func _call_network_process(input_frame: InputBufferFrame) -> void:
 	var nodes: Array = get_tree().get_nodes_in_group('network_sync')
+	var process_nodes := []
+	var postprocess_nodes := []
+	
+	# Call _network_preprocess() and collect list of nodes with the other
+	# virtual methods.
 	var i = nodes.size()
 	while i > 0:
 		i -= 1
 		var node = nodes[i]
-		if node.has_method('_network_process') and node.is_inside_tree() and not node.is_queued_for_deletion():
+		if node.is_inside_tree() and not node.is_queued_for_deletion():
+			if node.has_method('_network_preprocess'):
+				var player_input = input_frame.get_player_input(network_adaptor.get_network_master_for_node(node))
+				node._network_preprocess(player_input.get(str(node.get_path()), {}))
+			if node.has_method('_network_process'):
+				process_nodes.append(node)
+			if node.has_method('_network_postprocess'):
+				postprocess_nodes.append(node)
+	
+	# Call _network_process().
+	for node in process_nodes:
+		if node.is_inside_tree() and not node.is_queued_for_deletion():
 			var player_input = input_frame.get_player_input(network_adaptor.get_network_master_for_node(node))
 			node._network_process(player_input.get(str(node.get_path()), {}))
+	
+	# Call _network_postprocess().
+	for node in postprocess_nodes:
+		if node.is_inside_tree() and not node.is_queued_for_deletion():
+			var player_input = input_frame.get_player_input(network_adaptor.get_network_master_for_node(node))
+			node._network_postprocess(player_input.get(str(node.get_path()), {}))
 
 func _call_save_state() -> Dictionary:
 	var state := {}
