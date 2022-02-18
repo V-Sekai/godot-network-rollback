@@ -219,6 +219,11 @@ signal scene_spawned (name, spawned_node, scene, data)
 signal scene_despawned (name, node)
 signal interpolation_frame ()
 
+func _enter_tree() -> void:
+	var project_settings_node = load("res://addons/godot-rollback-netcode/ProjectSettings.gd").new()
+	project_settings_node.add_project_settings()
+	project_settings_node.free()
+
 func _ready() -> void:
 	#get_tree().connect("network_peer_disconnected", self, "remove_peer")
 	#get_tree().connect("server_disconnected", self, "stop")
