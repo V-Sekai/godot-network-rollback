@@ -40,6 +40,7 @@ config/icon="res://icon.png"
 
 SyncDebugger="*res://addons/godot-rollback-netcode/SyncDebugger.gd"
 SyncManager="*res://addons/godot-rollback-netcode/SyncManager.gd"
+SyncReplay="*res://addons/godot-rollback-netcode/SyncReplay.gd"
 
 [debug]
 
@@ -89,6 +90,7 @@ sync_debug={
 [network]
 
 rollback/interpolation=true
+rollback/log_inspector/replay_match_scene_path="res://demo/Main.tscn"
 
 [physics]
 

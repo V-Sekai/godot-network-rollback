@@ -9,7 +9,8 @@ func serialize(value):
 		return serialize_resource(value)
 	elif value is Object:
 		return serialize_object(value)
-	return value
+	
+	return serialize_other(value)
 
 func serialize_dictionary(value: Dictionary) -> Dictionary:
 	var serialized := {}
@@ -35,6 +36,37 @@ func serialize_object(value: Object):
 		string = value.to_string(),
 	}
 
+func serialize_other(value):
+	if value is Vector2:
+		return {
+			_ = 'Vector2',
+			x = value.x,
+			y = value.y,
+		}
+	elif value is Vector3:
+		return {
+			_ = 'Vector3',
+			x = value.x,
+			y = value.y
+		}
+	elif value is Transform2D:
+		return {
+			_ = 'Transform2D',
+			x = {x = value.x.x, y = value.x.y},
+			y = {x = value.y.x, y = value.y.y},
+			origin = {x = value.origin.x, y = value.origin.y},
+		}
+	elif value is Transform:
+		return {
+			_ = 'Transform',
+			x = {x = value.x.x, y = value.x.y, z = value.x.z},
+			y = {x = value.y.x, y = value.y.y, z = value.y.z},
+			z = {x = value.z.x, y = value.z.y, z = value.z.z},
+			origin = {x = value.origin.x, y = value.origin.y, z = value.origin.z},
+		}
+	
+	return value
+
 func unserialize(value):
 	if value is Dictionary:
 		if not value.has('_'):
@@ -42,6 +74,8 @@ func unserialize(value):
 		
 		if value['_'] == 'resource':
 			return unserialize_resource(value)
+		elif value['_'] in ['Vector2', 'Vector3', 'Transform2D', 'Transform']:
+			return unserialize_other(value)
 		
 		return unserialize_object(value)
 	elif value is Array:
@@ -66,4 +100,26 @@ func unserialize_resource(value: Dictionary):
 func unserialize_object(value: Dictionary):
 	if value['_'] == 'object':
 		return value['string']
+	return null
+
+func unserialize_other(value: Dictionary):
+	match value['_']:
+		'Vector2':
+			return Vector2(value.x, value.y)
+		'Vector3':
+			return Vector3(value.x, value.y, value.z)
+		'Transform2D':
+			return Transform2D(
+				Vector2(value.x.x, value.x.y),
+				Vector2(value.y.x, value.y.y),
+				Vector2(value.origin.x, value.origin.y)
+			)
+		'Transform':
+			return Transform(
+				Vector3(value.x.x, value.x.y, value.x.z),
+				Vector3(value.y.x, value.y.y, value.y.z),
+				Vector3(value.z.x, value.z.y, value.z.z),
+				Vector3(value.origin.x, value.origin.y, value.origin.z)
+			)
+	
 	return null

@@ -14,7 +14,7 @@ var show_rollback_ticks := true
 var max_rollback_ticks := 15
 
 const FRAME_TYPE_COLOR = {
-	Logger.FrameType.INTERFRAME: Color(0.7, 0.7, 0.7),
+	Logger.FrameType.INTERFRAME: Color(0.3, 0.3, 0.3),
 	Logger.FrameType.TICK: Color(0.0, 0.75, 0.0),
 	Logger.FrameType.INTERPOLATION_FRAME: Color(0.0, 0.0, 0.5),
 }

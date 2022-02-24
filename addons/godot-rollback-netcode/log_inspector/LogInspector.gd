@@ -42,6 +42,8 @@ func _ready() -> void:
 	state_input_viewer.set_replay_server(replay_server)
 	frame_viewer.set_replay_server(replay_server)
 	
+	file_dialog.current_dir = OS.get_user_data_dir() + "/detailed_logs/"
+	
 	# Show and make full screen if the scene is being run on its own.
 	if get_parent() == get_tree().root:
 		visible = true
@@ -67,19 +69,7 @@ func _on_ClearButton_pressed() -> void:
 	state_input_viewer.clear()
 	frame_viewer.clear()
 
-func _on_AddUserLogButton_pressed() -> void:
-	file_dialog.access = FileDialog.ACCESS_USERDATA
-	file_dialog.current_dir = "user://detailed_logs/"
-	file_dialog.current_file = ''
-	file_dialog.current_path = ''
-	file_dialog.show_modal()
-	file_dialog.invalidate()
-
-func _on_AddAnyLogButton_pressed() -> void:
-	var dir := Directory.new()
-	
-	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
-	file_dialog.current_dir = dir.get_current_dir()
+func _on_AddLogButton_pressed() -> void:
 	file_dialog.current_file = ''
 	file_dialog.current_path = ''
 	file_dialog.show_modal()

@@ -29,8 +29,8 @@ window_title = "Open File(s)"
 mode = 1
 access = 2
 filters = PoolStringArray( "*.log ; Log files" )
-current_dir = "/home/dsnopek/games/Retro Tank Party"
-current_path = "/home/dsnopek/games/Retro Tank Party/"
+current_dir = "/home/dsnopek/.local/share/godot/app_userdata/Godot Rollback Netcode Demo/detailed_logs/"
+current_path = "/home/dsnopek/.local/share/godot/app_userdata/Godot Rollback Netcode Demo/detailed_logs/"
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -70,27 +70,21 @@ margin_right = 44.0
 margin_bottom = 20.0
 text = "Clear"
 
-[node name="AddUserLogButton" type="Button" parent="MarginContainer/VBoxContainer/LoadToolbar"]
+[node name="AddLogButton" type="Button" parent="MarginContainer/VBoxContainer/LoadToolbar"]
 margin_left = 48.0
-margin_right = 145.0
+margin_right = 111.0
 margin_bottom = 20.0
-text = "Add User Log"
-
-[node name="AddAnyLogButton" type="Button" parent="MarginContainer/VBoxContainer/LoadToolbar"]
-margin_left = 149.0
-margin_right = 240.0
-margin_bottom = 20.0
-text = "Add Any Log"
+text = "Add Log"
 
 [node name="Separator1" type="Control" parent="MarginContainer/VBoxContainer/LoadToolbar"]
-margin_left = 244.0
-margin_right = 420.0
+margin_left = 115.0
+margin_right = 323.0
 margin_bottom = 20.0
 size_flags_horizontal = 3
 
 [node name="ModeButton" type="OptionButton" parent="MarginContainer/VBoxContainer/LoadToolbar"]
-margin_left = 424.0
-margin_right = 600.0
+margin_left = 327.0
+margin_right = 536.0
 margin_bottom = 20.0
 size_flags_horizontal = 3
 text = "Frame"
@@ -98,13 +92,13 @@ items = [ "State/Input", null, false, 0, null, "Frame", null, false, 1, null ]
 selected = 1
 
 [node name="Separator2" type="Control" parent="MarginContainer/VBoxContainer/LoadToolbar"]
-margin_left = 604.0
-margin_right = 780.0
+margin_left = 540.0
+margin_right = 748.0
 margin_bottom = 20.0
 size_flags_horizontal = 3
 
 [node name="DataDescriptionLabel" type="Label" parent="MarginContainer/VBoxContainer/LoadToolbar"]
-margin_left = 784.0
+margin_left = 752.0
 margin_top = 3.0
 margin_right = 961.0
 margin_bottom = 17.0
@@ -240,8 +234,7 @@ script = ExtResource( 5 )
 [connection signal="about_to_show" from="." to="." method="_on_LogInspector_about_to_show"]
 [connection signal="files_selected" from="FileDialog" to="." method="_on_FileDialog_files_selected"]
 [connection signal="pressed" from="MarginContainer/VBoxContainer/LoadToolbar/ClearButton" to="." method="_on_ClearButton_pressed"]
-[connection signal="pressed" from="MarginContainer/VBoxContainer/LoadToolbar/AddUserLogButton" to="." method="_on_AddUserLogButton_pressed"]
-[connection signal="pressed" from="MarginContainer/VBoxContainer/LoadToolbar/AddAnyLogButton" to="." method="_on_AddAnyLogButton_pressed"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/LoadToolbar/AddLogButton" to="." method="_on_AddLogButton_pressed"]
 [connection signal="item_selected" from="MarginContainer/VBoxContainer/LoadToolbar/ModeButton" to="." method="_on_ModeButton_item_selected"]
 [connection signal="pressed" from="MarginContainer/VBoxContainer/ReplayToolbar/ServerContainer/HBoxContainer/StartServerButton" to="." method="_on_StartServerButton_pressed"]
 [connection signal="pressed" from="MarginContainer/VBoxContainer/ReplayToolbar/ServerContainer/HBoxContainer/StopServerButton" to="." method="_on_StopServerButton_pressed"]

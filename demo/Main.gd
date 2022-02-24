@@ -5,6 +5,11 @@ onready var host_field = $CanvasLayer/ConnectionPanel/GridContainer/HostField
 onready var port_field = $CanvasLayer/ConnectionPanel/GridContainer/PortField
 onready var message_label = $CanvasLayer/MessageLabel
 onready var sync_lost_label = $CanvasLayer/SyncLostLabel
+onready var reset_button = $CanvasLayer/ResetButton
+
+const LOG_FILE_DIRECTORY = 'user://detailed_logs'
+
+var logging_enabled := true
 
 func _ready() -> void:
 	get_tree().connect("network_peer_connected", self, "_on_network_peer_connected")
@@ -58,9 +63,28 @@ func _on_server_disconnected() -> void:
 
 func _on_SyncManager_sync_started() -> void:
 	message_label.text = "Started!"
+	
+	if logging_enabled and not SyncReplay.active:
+		var dir = Directory.new()
+		if not dir.dir_exists(LOG_FILE_DIRECTORY):
+			dir.make_dir(LOG_FILE_DIRECTORY)
+		
+		var datetime = OS.get_datetime(true)
+		var log_file_name = "%04d%02d%02d-%02d%02d%02d-peer-%d.log" % [
+			datetime['year'],
+			datetime['month'],
+			datetime['day'],
+			datetime['hour'],
+			datetime['minute'],
+			datetime['second'],
+			get_tree().get_network_unique_id(),
+		]
+		
+		SyncManager.start_logging(LOG_FILE_DIRECTORY + '/' + log_file_name)
 
 func _on_SyncManager_sync_stopped() -> void:
-	pass
+	if logging_enabled:
+		SyncManager.stop_logging()
 
 func _on_SyncManager_sync_lost() -> void:
 	sync_lost_label.visible = true
@@ -84,3 +108,7 @@ func _on_ResetButton_pressed() -> void:
 	if peer:
 		peer.close_connection()
 	get_tree().reload_current_scene()
+
+func setup_match_for_replay(my_peer_id: int, peer_ids: Array, match_info: Dictionary) -> void:
+	connection_panel.visible = false
+	reset_button.visible = false
