@@ -2,14 +2,22 @@ tool
 extends Control
 
 const LogData = preload("res://addons/godot-rollback-netcode/log_inspector/LogData.gd")
+const ReplayServer = preload("res://addons/godot-rollback-netcode/log_inspector/ReplayServer.gd")
 
 onready var file_dialog = $FileDialog
 onready var progress_dialog = $ProgressDialog
-onready var data_description_label = $MarginContainer/VBoxContainer/HBoxContainer/DataDescriptionLabel
+onready var data_description_label = $MarginContainer/VBoxContainer/LoadToolbar/DataDescriptionLabel
 onready var data_description_label_default_text = data_description_label.text
-onready var mode_button = $MarginContainer/VBoxContainer/HBoxContainer/ModeButton
+onready var mode_button = $MarginContainer/VBoxContainer/LoadToolbar/ModeButton
 onready var state_input_viewer = $MarginContainer/VBoxContainer/StateInputViewer
 onready var frame_viewer = $MarginContainer/VBoxContainer/FrameViewer
+onready var replay_server = $ReplayServer
+onready var replay_server_status_label = $MarginContainer/VBoxContainer/ReplayToolbar/ServerContainer/HBoxContainer/ReplayStatusLabel
+onready var start_server_button = $MarginContainer/VBoxContainer/ReplayToolbar/ServerContainer/HBoxContainer/StartServerButton
+onready var stop_server_button = $MarginContainer/VBoxContainer/ReplayToolbar/ServerContainer/HBoxContainer/StopServerButton
+onready var disconnect_button = $MarginContainer/VBoxContainer/ReplayToolbar/ServerContainer/HBoxContainer/DisconnectButton
+onready var launch_game_button = $MarginContainer/VBoxContainer/ReplayToolbar/ClientContainer/HBoxContainer/LaunchGameButton
+onready var show_peer_field = $MarginContainer/VBoxContainer/ReplayToolbar/ClientContainer/HBoxContainer/ShowPeerField
 
 enum DataMode {
 	STATE_INPUT,
@@ -31,6 +39,9 @@ func _ready() -> void:
 	log_data.connect("load_finished", self, "_on_log_data_load_finished")
 	log_data.connect("data_updated", self, "refresh_from_log_data")
 	
+	state_input_viewer.set_replay_server(replay_server)
+	frame_viewer.set_replay_server(replay_server)
+	
 	# Show and make full screen if the scene is being run on its own.
 	if get_parent() == get_tree().root:
 		visible = true
@@ -38,6 +49,17 @@ func _ready() -> void:
 		anchor_bottom = 1
 		margin_right = 0
 		margin_bottom = 0
+		start_log_inspector()
+
+func _on_LogInspector_about_to_show() -> void:
+	start_log_inspector()
+
+func start_log_inspector() -> void:
+	update_replay_server_status()
+	replay_server.start_listening()
+
+func set_editor_interface(editor_interface) -> void:
+	replay_server.set_editor_interface(editor_interface)
 
 func _on_ClearButton_pressed() -> void:
 	log_data.clear()
@@ -79,6 +101,11 @@ func refresh_from_log_data() -> void:
 	if log_data.mismatches.size() > 0:
 		data_description_label.text += " with %s mismatches" % log_data.mismatches.size()
 	
+	show_peer_field.clear()
+	for peer_id in log_data.peer_ids:
+		show_peer_field.add_item("Peer %s" % peer_id, peer_id)
+	
+	refresh_replay()
 	state_input_viewer.refresh_from_log_data()
 	frame_viewer.refresh_from_log_data()
 
@@ -106,3 +133,70 @@ func _on_ModeButton_item_selected(index: int) -> void:
 		state_input_viewer.visible = true
 	elif index == DataMode.FRAME:
 		frame_viewer.visible = true
+
+func _on_StartServerButton_pressed() -> void:
+	replay_server.start_listening()
+
+func _on_StopServerButton_pressed() -> void:
+	if replay_server.is_connected_to_game():
+		replay_server.disconnect_from_game(false)
+	else:
+		replay_server.stop_listening()
+
+func update_replay_server_status() -> void:
+	match replay_server.get_status():
+		ReplayServer.Status.NONE:
+			replay_server_status_label.text = 'Disabled.'
+			start_server_button.disabled = false
+			stop_server_button.disabled = true
+			disconnect_button.disabled = true
+			launch_game_button.disabled = true
+		ReplayServer.Status.LISTENING:
+			replay_server_status_label.text = 'Listening for connections...'
+			start_server_button.disabled = true
+			stop_server_button.disabled = false
+			disconnect_button.disabled = true
+			launch_game_button.disabled = false
+		ReplayServer.Status.CONNECTED:
+			replay_server_status_label.text = 'Connected to game.'
+			start_server_button.disabled = true
+			stop_server_button.disabled = false
+			disconnect_button.disabled = false
+			launch_game_button.disabled = true
+
+func refresh_replay() -> void:
+	var replay_peer_id = show_peer_field.get_selected_id()
+	
+	if replay_server:
+		replay_server.send_match_info(log_data, replay_peer_id)
+	
+	state_input_viewer.set_replay_peer_id(replay_peer_id)
+	frame_viewer.set_replay_peer_id(replay_peer_id)
+	
+	var mode = mode_button.selected
+	if mode == DataMode.STATE_INPUT:
+		state_input_viewer.refresh_replay()
+	elif mode == DataMode.FRAME:
+		frame_viewer.refresh_replay()
+
+func _on_ReplayServer_started_listening() -> void:
+	update_replay_server_status()
+
+func _on_ReplayServer_stopped_listening() -> void:
+	update_replay_server_status()
+
+func _on_ReplayServer_game_connected() -> void:
+	update_replay_server_status()
+	refresh_replay()
+
+func _on_ReplayServer_game_disconnected() -> void:
+	update_replay_server_status()
+
+func _on_LaunchGameButton_pressed() -> void:
+	replay_server.launch_game()
+
+func _on_DisconnectButton_pressed() -> void:
+	replay_server.disconnect_from_game()
+
+func _on_ShowPeerField_item_selected(index: int) -> void:
+	refresh_replay()

@@ -2,6 +2,7 @@ tool
 extends VBoxContainer
 
 const LogData = preload("res://addons/godot-rollback-netcode/log_inspector/LogData.gd")
+const ReplayServer = preload("res://addons/godot-rollback-netcode/log_inspector/ReplayServer.gd")
 const DebugStateComparer = preload("res://addons/godot-rollback-netcode/DebugStateComparer.gd")
 
 const JSON_INDENT = "    "
@@ -13,13 +14,37 @@ onready var state_data_label = $GridContainer/StatePanel/StateDataLabel
 onready var state_mismatches_data_label = $GridContainer/StateMismatchesPanel/StateMismatchesDataLabel
 
 var log_data: LogData
+var replay_server: ReplayServer
+var replay_peer_id: int
 
 func set_log_data(_log_data: LogData) -> void:
 	log_data = _log_data
 
+func set_replay_server(_replay_server: ReplayServer) -> void:
+	replay_server = _replay_server
+
+func set_replay_peer_id(_replay_peer_id: int) -> void:
+	replay_peer_id = _replay_peer_id
+
 func refresh_from_log_data() -> void:
 	tick_number_field.max_value = log_data.max_tick
 	_on_TickNumber_value_changed(tick_number_field.value)
+
+func refresh_replay() -> void:
+	if replay_server and replay_server.is_connected_to_game():
+		var tick: int = int(tick_number_field.value)
+		var state_frame: LogData.StateData = log_data.state.get(tick, null)
+		if state_frame:
+			var state_data: Dictionary
+			if state_frame.mismatches.has(replay_peer_id):
+				state_data = state_frame.mismatches[replay_peer_id]
+			else:
+				state_data = state_frame.state
+			
+			replay_server.send_message({
+				type = "load_state",
+				state = state_data,
+			})
 
 func clear() -> void:
 	tick_number_field.max_value = 0
@@ -69,6 +94,8 @@ func _on_TickNumber_value_changed(value: float) -> void:
 			state_mismatches_data_label.text = mismatch_text
 		else:
 			state_mismatches_data_label.text = ''
+		
+		refresh_replay()
 	else:
 		state_data_label.text = ''
 		state_mismatches_data_label.text = ''

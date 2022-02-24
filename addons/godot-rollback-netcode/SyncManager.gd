@@ -145,6 +145,7 @@ var peers := {}
 var input_buffer := []
 var state_buffer := []
 var state_hashes := []
+var mechanized := false setget set_mechanized
 
 var max_buffer_size := 20
 var ticks_to_calculate_advantage := 60
@@ -322,6 +323,14 @@ func set_hash_serializer(_hash_serializer: HashSerializer) -> void:
 	assert(not started, "Changing the hash serializer after SyncManager has started will probably break everything")
 	hash_serializer = _hash_serializer
 
+func set_mechanized(_mechanized: bool) -> void:
+	assert(not started, "Changing the mechanized flag after SyncManager has started will probably break everything")
+	mechanized = _mechanized
+	
+	set_process(not mechanized)
+	set_physics_process(not mechanized)
+	_ping_timer.paused = mechanized
+
 func set_ping_frequency(_ping_frequency) -> void:
 	ping_frequency = _ping_frequency
 	if _ping_timer:
@@ -384,7 +393,7 @@ func _on_received_ping_back(peer_id: int, msg: Dictionary) -> void:
 	peer.time_delta = msg['remote_time'] - msg['local_time'] - (peer.rtt / 2.0)
 	emit_signal("peer_pinged_back", peer)
 
-func start_logging(log_file_path: String) -> void:
+func start_logging(log_file_path: String, match_info: Dictionary = {}) -> void:
 	# Our logger needs threads!
 	if not OS.can_use_threads():
 		return
@@ -394,7 +403,7 @@ func start_logging(log_file_path: String) -> void:
 	else:
 		_logger.stop()
 	
-	if _logger.start(log_file_path, network_adaptor.get_network_unique_id()) != OK:
+	if _logger.start(log_file_path, network_adaptor.get_network_unique_id(), match_info) != OK:
 		stop_logging()
 
 func stop_logging() -> void:
@@ -403,8 +412,11 @@ func stop_logging() -> void:
 		_logger = null
 
 func start() -> void:
-	assert(network_adaptor.is_network_host(), "start() should only be called on the host")
+	assert(network_adaptor.is_network_host() or mechanized, "start() should only be called on the host")
 	if started or _host_starting:
+		return
+	if mechanized:
+		_on_received_remote_start()
 		return
 	if network_adaptor.is_network_host():
 		var highest_rtt: int = 0
@@ -421,6 +433,7 @@ func start() -> void:
 		# Wait for half the highest RTT to start locally.
 		print ("Delaying host start by %sms" % (highest_rtt / 2))
 		yield(get_tree().create_timer(highest_rtt / 2000.0), 'timeout')
+		
 		_on_received_remote_start()
 		_host_starting = false
 
@@ -457,7 +470,7 @@ func _on_received_remote_start() -> void:
 	emit_signal("sync_started")
 
 func stop() -> void:
-	if network_adaptor.is_network_host():
+	if network_adaptor.is_network_host() and not mechanized:
 		for peer_id in peers:
 			network_adaptor.send_remote_stop(peer_id)
 	
@@ -620,16 +633,11 @@ func _update_state_hashes() -> void:
 		
 		_last_state_hashed_tick += 1
 		
-		# We're duplicating code from _calculate_data_hash() so that we can
-		# reuse the serialized Dictionary to log our state with the host.
-		var cleaned = _clean_data_for_hashing(state_frame.data)
-		var serialized = hash_serializer.serialize(cleaned)
-		var serialized_hash = serialized.hash()
-		
-		state_hashes.append(StateHashFrame.new(_last_state_hashed_tick, serialized_hash))
+		var state_hash = _calculate_data_hash(state_frame.data)
+		state_hashes.append(StateHashFrame.new(_last_state_hashed_tick, state_hash))
 		
 		if _logger:
-			_logger.write_state(_last_state_hashed_tick, serialized, serialized_hash)
+			_logger.write_state(_last_state_hashed_tick, state_frame.data)
 
 func _do_tick(is_rollback: bool = false) -> bool:
 	var input_frame := get_input_frame(current_tick)
@@ -942,9 +950,8 @@ func _physics_process(_delta: float) -> void:
 	if current_tick == 0:
 		_save_current_state()
 		if _logger:
-			var cleaned = _clean_data_for_hashing(state_buffer[0].data)
-			var serialized = hash_serializer.serialize(cleaned)
-			_logger.write_state(0, serialized, serialized.hash())
+			_calculate_data_hash(state_buffer[0].data)
+			_logger.write_state(0, state_buffer[0].data)
 	
 	#####
 	# STEP 1: PERFORM ANY ROLLBACKS, IF NECESSARY.
@@ -1209,10 +1216,12 @@ func _clean_data_for_hashing_recursive(input: Dictionary) -> Dictionary:
 # This can be used for comparing input (to prevent a difference betwen predicted
 # input and real input from causing a rollback) and state (for when a property
 # is only used for interpolation).
-func _calculate_data_hash(input: Dictionary) -> void:
+func _calculate_data_hash(input: Dictionary) -> int:
 	var cleaned = _clean_data_for_hashing(input)
 	var serialized = hash_serializer.serialize(cleaned)
-	input['$'] = serialized.hash()
+	var serialized_hash = serialized.hash()
+	input['$'] = serialized_hash
+	return serialized_hash
 
 func _on_received_input_tick(peer_id: int, serialized_msg: PoolByteArray) -> void:
 	if not started:
