@@ -179,7 +179,9 @@ section called "Virtual methods" below for more information.)
 #### Signals: ####
 
 - `sync_started ()`: Emitted when synchronization has started, as a result of
-  `SyncManager.start()` on the "host".
+  calling `SyncManager.start()` on the "host". Even though
+  `SyncManager.start()` is only called on the "host", this signal will be
+  emitted on _all_ peers.
 
 - `sync_stopped ()`: Emitted when synchronization has stopped for any reason -
   it could be due to an error (in which case "sync_error" will have been
@@ -581,10 +583,12 @@ It's also a good idea to connect to the "sync_lost", "sync_regained" and
 "sync_error" signals so you can provide the player with useful error messages
 if something goes wrong.
 
-If you are logging, you'll want to call `SyncManager.start_logging()` just
-before calling `SyncManager.start()`, and `SyncManager.stop_logging()` just
-after calling `SyncManager.stop()`. The logs are meant to contain data from
-just a single match, which is what the "Log inspector" tool will expect
+If you are logging, you'll want to call `SyncManager.start_logging()` sometime
+before calling `SyncManager.start()` or in response to the 'sync_started'
+signal (but after all match setup is complete), and call
+`SyncManager.stop_logging()` just after calling `SyncManager.stop()` or in
+response to the 'sync_stopped' signal. The logs are meant to contain data from
+just a single match, which is what the "Log inspector" tool will expect.
 
 Logo credits
 ------------
