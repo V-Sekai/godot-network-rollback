@@ -23,8 +23,10 @@ I'm working on a series of video tutorials on YouTube - here's the
 and these are the parts that are published as of the last time this README was
 updated:
 
-- [Rollback netcode in Godot (part 1): What is rollback and prediction?](https://www.youtube.com/watch?v=zvqQPbT8rAE&list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir&index=2&t=343s)
-- [Rollback netcode in Godot (part 2): Getting Started with the Godot Rollback Netcode addon!](https://www.youtube.com/watch?v=NsA-lz2B5Sw&list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir&index=3&t=634s)
+- [Rollback netcode in Godot (part 1): What is rollback and prediction?](https://www.youtube.com/watch?v=zvqQPbT8rAE&list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir&index=2)
+- [Rollback netcode in Godot (part 2): Getting Started with the Godot Rollback Netcode addon!](https://www.youtube.com/watch?v=NsA-lz2B5Sw&list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir&index=3)
+- [Rollback netcode in Godot (part 3): Making a custom MessageSerializer](https://www.youtube.com/watch?v=Bxao6x8-2vw&list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir&index=4)
+- [Rollback netcode in Godot (part 4): Spawning scenes and NetworkTimer](https://www.youtube.com/watch?v=iQtodIxM2-0&list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir&index=5)
 
 More videos are coming soon!
 
@@ -34,7 +36,7 @@ Installing
 This addon is implemented as an editor plugin.
 
 If you've never installed a plugin before, please see the
-[official docs on how to install plugins](https://docs.godotengine.org/en/stable/tutorials/plugins/editor/installing_plugins.html)
+[official docs on how to install plugins](https://docs.godotengine.org/en/stable/tutorials/plugins/editor/installing_plugins.html).
 
 However, the short version is:
 
@@ -74,6 +76,11 @@ This is a quick overview of the different pieces that the addon includes.
   default, the overlay can be shown by pressing F11, but you can assign any
   input event to the "sync_debug" action in the Input Map in your project's
   settings.
+
+- `res://addons/godot-rollback-netcode/SyncReplay.gd`: Adding this singleton
+  will allow you to replay matches from log files, using the "Log Inspector"
+  tool that is added to the Godot editor. See the "Setting up replay"
+  sub-section below for more information.
 
 ### Important properties, methods and signals on `SyncManager` ###
 
@@ -118,10 +125,11 @@ section called "Virtual methods" below for more information.)
   log file. The common convention is to put the log files under
   "user://detailed_logs/". The `match_info` is stored at the start of the
   log, and is used when loading a replay of the match. This method should
-  be called before `SyncManager.start()` or the "sync_started" signal.
+  be called before `SyncManager.start()` or in response to the "sync_started"
+  signal.
 
 - `stop_logging() -> void`: Stops logging. This method should be called
-  after `SyncManager.stop()` or the "sync_stopped" signal.
+  after `SyncManager.stop()` or in response to the "sync_stopped" signal.
 
 - `spawn(name: String, parent: Node, scene: PackedScene, data: Dictionary = {}, rename: bool = true, signal_name: String = '') -> Node`:
   Spawns a scene and makes a "spawn record" in state so that it can be
@@ -350,11 +358,11 @@ plugin is enabled.
 
 ![Screenshot of "Rollback" section in Project Settings](assets/screenshots/project_settings.png)
 
-- **Max Buffer Size**: The number of state frames to keep in the buffer. This
-  defines the maximum number of ticks that the game can rollback.
-- **Ticks To Calculate Advantage**: The number of ticks we collect advantage
-  calculations from each peer before calculating an average, and possibly
-  skipping some frames so that other clients can catch up.
+- **Max Buffer Size**: The number of state and input frames to keep in the
+  buffer. This defines the maximum number of ticks that the game can rollback.
+- **Ticks To Calculate Advantage**: The number of ticks that we collect
+  advantage calculations from each peer before calculating an average, and
+  possibly skipping some frames so that other clients can catch up.
 - **Input Delay**: The number of frames of input delay.
 - **Ping Frequency**: The number of seconds between each ping.
 - **Interpolation**: If enabled, we'll do 1 tick of interpolation. This
@@ -429,6 +437,24 @@ game!*
   milliseconds, then an error will be push to the editor and console,
   including how long it actually took.
 
+**Log Inspector:**
+
+- **Replay Match Scene Path**: The path to the scene to load when launching
+  the game as a replay client.
+- **Replay Match Scene Method**: The method on the above scene to call in
+  order to setup the match to run as a replay. While this method can be named
+  anything, it must accept the following arguments (in this order):
+  - `my_peer_id: int`: The peer id that the replay client will be displaying.
+  - `peer_ids: Array`: An array of the other peer ids in the match.
+  - `match_info: Dictionary`: The `match_info` Dictionary that was passed to
+    `SyncManager.start_logging()` when creating the log that we are replaying
+    from. This should be used to initialize the match to the same state as
+    the match that was logged.
+- **Replay Arguments**: The arguments to pass to the game on the command-line
+  when launching it as a replay client.
+- **Replay Port**: The TCP port used by the Godot editor to communicate with
+  the replay client.
+
 #### Other important settings not under "Rollback": ####
 
 - **Physics** -> **Common** -> **Physics FPS**: Since `SyncManager` uses
@@ -448,7 +474,10 @@ All network communication from `SyncManager` passes through its
 `NetworkAdaptor`. The default implementation uses Godot RPCs.
 
 You can replace the network adaptor with your own class, in order to
-customize network communications.
+customize network communications. This could even allow you to avoid using
+Godot's High-level Multiplayer API in favor of some other underlying
+communication layer, for example,
+[Steam's peer-to-peer networking](https://partner.steamgames.com/doc/features/multiplayer/networking).
 
 **Parent class:** `res://addons/godot-rollback-netcode/NetworkAdaptor.gd`
 
@@ -493,12 +522,16 @@ The "Log Inspector" can be opened by clicking **Project** -> **Tools** ->
 It allows you to load the logs (generated by `SyncManager.start_logging()`)
 from all the clients in a match and examine the data in detail.
 
-![Screenshot of "Log Inspector" tool in the Godot editor](assets/screenshots/log_inspector.png)
+**Note:** Each client generates its own seperate log file for the match, so
+you'll need to collect them from the other players, and open ALL of them in
+the "Log Inspector" together.
 
 At the top there is a view selector which lets you switch between a "Frame"
 and a "State/Input" view of the data.
 
 #### Frame viewer: ###
+
+![Screenshot of the "Frame viewer" in the "Log Inspector" tool in the Godot editor](assets/screenshots/log_inspector_frame.png)
 
 The "Frame" viewer shows data about each frame executed, including tick
 frames, interpolation frames and skipped frames. The x-axis is milliseconds
@@ -512,7 +545,9 @@ data includes timing information, the number of rollbacks executed, messages
 received and much more.
 
 If you click the "Previous frame" or "Next frame" buttons, the cursor will
-move forward or backward to the next frame on any peer.
+move forward or backward to the next frame on any peer. However, if "Seek only
+on replay peer" is checked, it'll only jump to the next or previous frame
+on the peer selected in the dropdown in the replay toolbar.
 
 The arrows connect from the tick when input was generated, to the frame when
 the other peer receives that input. This gives a visual representation of the
@@ -525,6 +560,8 @@ and during which portions of the match.
 
 #### State/Input viewer: ####
 
+![Screenshot of the "State/Input viewer" in the "Log Inspector" tool in the Godot editor](assets/screenshots/log_inspector_state_input.png)
+
 The "State/Input" viewer allows you to look at the final state and input on
 every tick in the match.
 
@@ -535,9 +572,67 @@ differences will be shown on the right side of the window.
 Using the "Previous mismatch" or "Next mismatch" buttons, you can jump to the
 previous or next mismatch found in the data.
 
-You will definitely spend some amount of time chasing down issues in your
+You are likely to spend a large amount of time chasing down issues in your
 game logic that lead to state mismatches. Input mismatches are much rarer,
-but are a super critical problem if they do occur.
+but they are a super critical problem if they do occur.
+
+#### How to setup replay ####
+
+The "Log Inspector" can allow you to replay the match from the logs, by either
+loading state (in the "State/Input viewer") or re-executing frames (in the
+"Frame viewer" - _IMPLEMENTATION CURRENTLY INCOMPLETE_).
+
+This can be very helpful in debugging issues, by allowing you to visually
+_see_ the state on a particular peer, when there is a state mismatch, or
+re-execute frames as they happened during a match with breakpoints set in the
+Godot debugger.
+
+This works by launching a special instance of the game (called a "replay
+client") which connects to the "Log Inspector" via a TCP port (this component
+is called the "replay server").
+
+However, there is a little bit of setup required to allow your game to
+support this:
+
+1. Add the `res://addons/godot-rollback-netcode/SyncReplay.gd` script as an
+   autoload singleton in **Project** -> **Project settings...** and the
+   "Autoload" tab.
+
+2. Pass a `match_info` Dictionary to `SyncManager.start_logging()` with
+   enough info to setup the match for replay.
+
+3. Ensure that your game _doesn't_ do any logging when launched as a replay
+   client. You can do this by checking if `SyncReplay.active` is true.
+
+4. Set "Replay Match Scene Path" in "Project settings" to the match scene
+   to load when showing a replay. Frequently, my games have a "Match.tscn"
+   that runs the match when played normally, so this is also what's used for
+   showing a replay, but you could create a unique replay scene as well.
+
+5. Set "Replay Match Scene Method" in "Project settings" to the method on
+   the scene set in the previous step, which will be able to setup the match
+   to show the replay using the `match_info` from step number 2. Its
+   implementation will look something like:
+   ```
+   func setup_match_for_replay(my_peer_id: int, peer_ids: Array, match_info: Dictionary) -> void:
+     # Setup the match using 'match_info' and disable anything we don't
+     # want or need during replay.
+     pass
+   ```
+   For more details on the individual arguments, see what the "Project
+   Settings" section above says about this setting.
+
+6. (Optional) If you have a custom `HashSerializer`, ensure that it can
+   unserialize any of the custom data it serializes, since this is what will
+   be used to load the state and input data from the logs.
+
+After completing all of these steps, you should be able to click the "Launch"
+button on the replay toolbar in the "Log Inspector" and see your game launch
+as a replay client. Then, in the "State/Input viewer", if you view a
+particular tick, it should load the state from that tick in the replay client.
+
+You can use the dropdown on the replay toolbar to configure which peer's data
+you would like to use in the replay.
 
 The most common "match flow"
 ----------------------------
@@ -584,8 +679,8 @@ It's also a good idea to connect to the "sync_lost", "sync_regained" and
 if something goes wrong.
 
 If you are logging, you'll want to call `SyncManager.start_logging()` sometime
-before calling `SyncManager.start()` or in response to the 'sync_started'
-signal (but after all match setup is complete), and call
+before calling `SyncManager.start()` (but after all match setup is complete)
+or in response to the 'sync_started' signal, and call
 `SyncManager.stop_logging()` just after calling `SyncManager.stop()` or in
 response to the 'sync_stopped' signal. The logs are meant to contain data from
 just a single match, which is what the "Log inspector" tool will expect.
