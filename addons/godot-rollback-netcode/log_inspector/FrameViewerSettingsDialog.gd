@@ -3,6 +3,7 @@ extends WindowDialog
 
 const LogData = preload("res://addons/godot-rollback-netcode/log_inspector/LogData.gd")
 const DataGraph = preload("res://addons/godot-rollback-netcode/log_inspector/FrameDataGraph.gd")
+const DataGrid = preload("res://addons/godot-rollback-netcode/log_inspector/FrameDataGrid.gd")
 const TimeOffsetSetting = preload("res://addons/godot-rollback-netcode/log_inspector/FrameViewerTimeOffsetSetting.tscn")
 
 onready var show_network_arrows_field := $MarginContainer/GridContainer/ShowNetworkArrows
@@ -14,7 +15,7 @@ onready var time_offset_container = $MarginContainer/GridContainer/TimeOffsetCon
 
 var log_data: LogData
 var data_graph: DataGraph
-var data_grid
+var data_grid: DataGrid
 
 func setup_settings_dialog(_log_data: LogData, _data_graph: DataGraph, _data_grid) -> void:
 	log_data = _log_data

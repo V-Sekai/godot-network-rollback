@@ -12,7 +12,7 @@ __meta__ = {
 }
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
-margin_right = 1280.0
+margin_right = 1024.0
 margin_bottom = 24.0
 
 [node name="TickNumberLabel" type="Label" parent="HBoxContainer"]
@@ -54,97 +54,98 @@ text = "End"
 
 [node name="GridContainer" type="GridContainer" parent="."]
 margin_top = 28.0
-margin_right = 1280.0
-margin_bottom = 720.0
+margin_right = 1024.0
+margin_bottom = 600.0
 size_flags_vertical = 3
 custom_constants/vseparation = 5
 custom_constants/hseparation = 5
 columns = 2
 
 [node name="InputLabel" type="Label" parent="GridContainer"]
-margin_right = 637.0
+margin_right = 509.0
 margin_bottom = 14.0
 size_flags_horizontal = 3
 text = "Input:"
 
 [node name="InputMismatchesLabel" type="Label" parent="GridContainer"]
-margin_left = 642.0
-margin_right = 1279.0
+margin_left = 514.0
+margin_right = 1023.0
 margin_bottom = 14.0
 size_flags_horizontal = 3
 text = "Input Mismatches:"
 
 [node name="InputPanel" type="Panel" parent="GridContainer"]
 margin_top = 19.0
-margin_right = 637.0
-margin_bottom = 343.0
+margin_right = 509.0
+margin_bottom = 283.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="InputDataLabel" type="RichTextLabel" parent="GridContainer/InputPanel"]
+[node name="InputDataTree" type="Tree" parent="GridContainer/InputPanel"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-focus_mode = 2
-selection_enabled = true
-__meta__ = {
-"_edit_use_anchors_": false
-}
+columns = 2
+hide_root = true
+select_mode = 1
 
 [node name="InputMismatchesPanel" type="Panel" parent="GridContainer"]
-margin_left = 642.0
+margin_left = 514.0
 margin_top = 19.0
-margin_right = 1279.0
-margin_bottom = 343.0
+margin_right = 1023.0
+margin_bottom = 283.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="InputMismatchesDataLabel" type="RichTextLabel" parent="GridContainer/InputMismatchesPanel"]
+[node name="InputMismatchesDataTree" type="Tree" parent="GridContainer/InputMismatchesPanel"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-focus_mode = 2
-selection_enabled = true
+columns = 3
+hide_root = true
+select_mode = 1
 
 [node name="StateLabel" type="Label" parent="GridContainer"]
-margin_top = 348.0
-margin_right = 637.0
-margin_bottom = 362.0
+margin_top = 288.0
+margin_right = 509.0
+margin_bottom = 302.0
 size_flags_horizontal = 3
 text = "State:"
 
 [node name="StateMismatchesLabel" type="Label" parent="GridContainer"]
-margin_left = 642.0
-margin_top = 348.0
-margin_right = 1279.0
-margin_bottom = 362.0
+margin_left = 514.0
+margin_top = 288.0
+margin_right = 1023.0
+margin_bottom = 302.0
 size_flags_horizontal = 3
 text = "State Mismatches:"
 
 [node name="StatePanel" type="Panel" parent="GridContainer"]
-margin_top = 367.0
-margin_right = 637.0
-margin_bottom = 691.0
+margin_top = 307.0
+margin_right = 509.0
+margin_bottom = 571.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="StateDataLabel" type="RichTextLabel" parent="GridContainer/StatePanel"]
+[node name="StateDataTree" type="Tree" parent="GridContainer/StatePanel"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-focus_mode = 2
-selection_enabled = true
+columns = 2
+hide_root = true
+select_mode = 1
 
 [node name="StateMismatchesPanel" type="Panel" parent="GridContainer"]
-margin_left = 642.0
-margin_top = 367.0
-margin_right = 1279.0
-margin_bottom = 691.0
+margin_left = 514.0
+margin_top = 307.0
+margin_right = 1023.0
+margin_bottom = 571.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="StateMismatchesDataLabel" type="RichTextLabel" parent="GridContainer/StateMismatchesPanel"]
+[node name="StateMismatchesDataTree" type="Tree" parent="GridContainer/StateMismatchesPanel"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-focus_mode = 2
-selection_enabled = true
+columns = 3
+hide_root = true
+select_mode = 1
 
 [connection signal="value_changed" from="HBoxContainer/TickNumber" to="." method="_on_TickNumber_value_changed"]
 [connection signal="pressed" from="HBoxContainer/StartButton" to="." method="_on_StartButton_pressed"]

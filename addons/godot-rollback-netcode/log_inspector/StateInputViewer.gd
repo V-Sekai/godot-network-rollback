@@ -8,14 +8,20 @@ const DebugStateComparer = preload("res://addons/godot-rollback-netcode/DebugSta
 const JSON_INDENT = "    "
 
 onready var tick_number_field = $HBoxContainer/TickNumber
-onready var input_data_label = $GridContainer/InputPanel/InputDataLabel
-onready var input_mismatches_data_label = $GridContainer/InputMismatchesPanel/InputMismatchesDataLabel
-onready var state_data_label = $GridContainer/StatePanel/StateDataLabel
-onready var state_mismatches_data_label = $GridContainer/StateMismatchesPanel/StateMismatchesDataLabel
+onready var input_data_tree = $GridContainer/InputPanel/InputDataTree
+onready var input_mismatches_data_tree = $GridContainer/InputMismatchesPanel/InputMismatchesDataTree
+onready var state_data_tree = $GridContainer/StatePanel/StateDataTree
+onready var state_mismatches_data_tree = $GridContainer/StateMismatchesPanel/StateMismatchesDataTree
 
 var log_data: LogData
 var replay_server: ReplayServer
 var replay_peer_id: int
+
+func _ready() -> void:
+	for tree in [input_mismatches_data_tree, state_mismatches_data_tree]:
+		tree.set_column_title(1, "Local")
+		tree.set_column_title(2, "Remote")
+		tree.set_column_titles_visible(true)
 
 func set_log_data(_log_data: LogData) -> void:
 	log_data = _log_data
@@ -49,10 +55,13 @@ func refresh_replay() -> void:
 func clear() -> void:
 	tick_number_field.max_value = 0
 	tick_number_field.value = 0
-	input_data_label.text = ''
-	input_mismatches_data_label.text = ''
-	state_data_label.text = ''
-	state_mismatches_data_label.text = ''
+	_clear_trees()
+
+func _clear_trees() -> void:
+	input_data_tree.clear()
+	input_mismatches_data_tree.clear()
+	state_data_tree.clear()
+	state_mismatches_data_tree.clear()
 
 func _on_TickNumber_value_changed(value: float) -> void:
 	var tick: int = int(value)
@@ -60,45 +69,97 @@ func _on_TickNumber_value_changed(value: float) -> void:
 	var input_frame: LogData.InputData = log_data.input.get(tick, null)
 	var state_frame: LogData.StateData = log_data.state.get(tick, null)
 	
+	_clear_trees()
+	
 	if input_frame:
-		input_data_label.text = JSON.print(input_frame.input, JSON_INDENT)
-		
-		if input_frame.mismatches.size() > 0:
-			var mismatch_text := ''
-			for peer_id in input_frame.mismatches:
-				var peer_input = input_frame.mismatches[peer_id]
-				mismatch_text += ("\n ==========  %s  ==========\n\n" % peer_id)
-				
-				var comparer = DebugStateComparer.new()
-				comparer.find_mismatches(input_frame.input, peer_input)
-				mismatch_text += comparer.print_mismatches()
-			input_mismatches_data_label.text = mismatch_text
-		else:
-			input_mismatches_data_label.text = ''
-	else:
-		input_data_label.text = ''
-		input_mismatches_data_label.text = ''
+		_create_tree_items_from_dictionary(input_data_tree, input_data_tree.create_item(), input_frame.input)
+		_create_tree_from_mismatches(input_mismatches_data_tree, input_frame.input, input_frame.mismatches)
 	
 	if state_frame:
-		state_data_label.text = JSON.print(state_frame.state, JSON_INDENT)
+		_create_tree_items_from_dictionary(state_data_tree, state_data_tree.create_item(), state_frame.state)
+		_create_tree_from_mismatches(state_mismatches_data_tree, state_frame.state, state_frame.mismatches)
+
+static func _convert_array_to_dictionary(a: Array) -> Dictionary:
+	var d := {}
+	for i in range(a.size()):
+		d[i] = a[i]
+	return d
+
+func _create_tree_items_from_dictionary(tree: Tree, parent_item: TreeItem, data: Dictionary, data_column: int = 1) -> void:
+	for key in data:
+		var value = data[key]
 		
-		if state_frame.mismatches.size() > 0:
-			var mismatch_text := ''
-			for peer_id in state_frame.mismatches:
-				var peer_state = state_frame.mismatches[peer_id]
-				mismatch_text += ("\n ==========  %s  ==========\n\n" % peer_id)
-				
-				var comparer = DebugStateComparer.new()
-				comparer.find_mismatches(state_frame.state, peer_state)
-				mismatch_text += comparer.print_mismatches()
-			state_mismatches_data_label.text = mismatch_text
+		var item = tree.create_item(parent_item)
+		item.set_text(0, key)
+		
+		if value is Dictionary:	
+			_create_tree_items_from_dictionary(tree, item, value)
+		elif value is Array:
+			_create_tree_items_from_dictionary(tree, item, _convert_array_to_dictionary(value))
 		else:
-			state_mismatches_data_label.text = ''
+			item.set_text(data_column, str(value))
 		
-		refresh_replay()
-	else:
-		state_data_label.text = ''
-		state_mismatches_data_label.text = ''
+		if key.begins_with('/root/SyncManager/'):
+			item.collapsed = true
+
+func _create_tree_from_mismatches(tree: Tree, data: Dictionary, mismatches: Dictionary) -> void:
+	if mismatches.size() == 0:
+		return
+	
+	var root = tree.create_item()
+	for peer_id in mismatches:
+		var peer_data = mismatches[peer_id]
+		
+		var peer_item = tree.create_item(root)
+		peer_item.set_text(0, "Peer %s" % peer_id)
+		
+		var comparer = DebugStateComparer.new()
+		comparer.find_mismatches(data, peer_data)
+		
+		for mismatch in comparer.mismatches:
+			var mismatch_item = tree.create_item(peer_item)
+			mismatch_item.set_expand_right(0, true)
+			mismatch_item.set_expand_right(1, true)
+			
+			match mismatch.type:
+				DebugStateComparer.MismatchType.MISSING:
+					mismatch_item.set_text(0, "[MISSING] %s" % mismatch.path)
+					
+					if mismatch.local_state is Dictionary:
+						_create_tree_items_from_dictionary(tree, mismatch_item, mismatch.local_state)
+					elif mismatch.local_state is Array:
+						_create_tree_items_from_dictionary(tree, mismatch_item, _convert_array_to_dictionary(mismatch.local_state))
+					else:
+						var child = tree.create_item(mismatch_item)
+						child.set_text(1, JSON.print(mismatch.local_state, JSON_INDENT))
+				
+				DebugStateComparer.MismatchType.EXTRA:
+					mismatch_item.set_text(0, "[EXTRA] %s" % mismatch.path)
+					
+					if mismatch.remote_state is Dictionary:
+						_create_tree_items_from_dictionary(tree, mismatch_item, mismatch.remote_state, 2)
+					elif mismatch.remote_state is Array:
+						_create_tree_items_from_dictionary(tree, mismatch_item, _convert_array_to_dictionary(mismatch.remote_state), 2)
+					else:
+						var child = tree.create_item(mismatch_item)
+						child.set_text(2, JSON.print(mismatch.remote_state, JSON_INDENT))
+				
+				DebugStateComparer.MismatchType.REORDER:
+					mismatch_item.set_text(0, "[REORDER] %s" % mismatch.path)
+					
+					for i in range(max(mismatch.local_state.size(), mismatch.remote_state.size())):
+						var order_item = tree.create_item(mismatch_item)
+						if i < mismatch.local_state.size():
+							order_item.set_text(1, mismatch.local_state[i])
+						if i < mismatch.remote_state.size():
+							order_item.set_text(2, mismatch.remote_state[i])
+				
+				DebugStateComparer.MismatchType.DIFFERENCE:
+					mismatch_item.set_text(0, "[DIFF] %s" % mismatch.path)
+					
+					var child = tree.create_item(mismatch_item)
+					child.set_text(1, JSON.print(mismatch.local_state, JSON_INDENT))
+					child.set_text(2, JSON.print(mismatch.remote_state, JSON_INDENT))
 
 func _on_PreviousMismatchButton_pressed() -> void:
 	var current_tick := int(tick_number_field.value)

@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=2]
+[gd_scene load_steps=5 format=2]
 
 [ext_resource path="res://addons/godot-rollback-netcode/log_inspector/FrameViewer.gd" type="Script" id=1]
 [ext_resource path="res://addons/godot-rollback-netcode/log_inspector/FrameDataGraph.tscn" type="PackedScene" id=2]
 [ext_resource path="res://addons/godot-rollback-netcode/log_inspector/FrameViewerSettingsDialog.tscn" type="PackedScene" id=3]
+[ext_resource path="res://addons/godot-rollback-netcode/log_inspector/FrameDataGrid.tscn" type="PackedScene" id=4]
 
 [node name="FrameViewer" type="Control"]
 anchor_right = 1.0
@@ -129,21 +130,25 @@ margin_bottom = 27.0
 size_flags_vertical = 4
 text = "Settings"
 
-[node name="DataGraph" parent="VBoxContainer" instance=ExtResource( 2 )]
-anchor_right = 0.0
-anchor_bottom = 0.0
+[node name="VSplitContainer" type="VSplitContainer" parent="VBoxContainer"]
 margin_top = 38.0
-margin_right = 1024.0
-margin_bottom = 317.0
-
-[node name="DataGrid" type="RichTextLabel" parent="VBoxContainer"]
-margin_top = 321.0
 margin_right = 1024.0
 margin_bottom = 600.0
 size_flags_vertical = 3
-bbcode_enabled = true
-bbcode_text = "Data Grid"
-text = "Data Grid"
+
+[node name="DataGraph" parent="VBoxContainer/VSplitContainer" instance=ExtResource( 2 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_right = 1024.0
+margin_bottom = 275.0
+
+[node name="DataGrid" parent="VBoxContainer/VSplitContainer" instance=ExtResource( 4 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_top = 287.0
+margin_right = 1024.0
+margin_bottom = 562.0
+size_flags_vertical = 3
 
 [node name="SettingsDialog" parent="." instance=ExtResource( 3 )]
 
@@ -154,4 +159,4 @@ text = "Data Grid"
 [connection signal="pressed" from="VBoxContainer/HBoxContainer/EndButton" to="." method="_on_EndButton_pressed"]
 [connection signal="pressed" from="VBoxContainer/HBoxContainer/ReplayContainer/HBoxContainer/ReplayToCurrentButton" to="." method="_on_ReplayToCurrentButton_pressed"]
 [connection signal="pressed" from="VBoxContainer/HBoxContainer/SettingsButton" to="." method="_on_SettingsButton_pressed"]
-[connection signal="cursor_time_changed" from="VBoxContainer/DataGraph" to="." method="_on_DataGraph_cursor_time_changed"]
+[connection signal="cursor_time_changed" from="VBoxContainer/VSplitContainer/DataGraph" to="." method="_on_DataGraph_cursor_time_changed"]
