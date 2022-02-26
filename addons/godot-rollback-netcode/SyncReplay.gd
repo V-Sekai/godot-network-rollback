@@ -102,7 +102,7 @@ func _do_setup_match1(my_peer_id: int, peer_ids: Array, match_info: Dictionary) 
 	SyncManager.stop()
 	SyncManager.clear_peers()
 	
-	SyncManager.network_adaptor = DummyNetworkAdaptor.new()
+	SyncManager.network_adaptor = DummyNetworkAdaptor.new(my_peer_id)
 	SyncManager.mechanized = true
 	
 	# Abuse WebRTCMultiplayer in order to set our peer id.

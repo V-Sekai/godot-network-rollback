@@ -1,5 +1,10 @@
 extends "res://addons/godot-rollback-netcode/NetworkAdaptor.gd"
 
+var my_peer_id: int
+
+func _init(_my_peer_id: int = 1) -> void:
+	my_peer_id = _my_peer_id
+
 func send_ping(peer_id: int, msg: Dictionary) -> void:
 	pass
 
@@ -22,7 +27,7 @@ func is_network_master_for_node(node: Node) -> bool:
 	return true
 
 func get_network_master_for_node(node: Node) -> int:
-	return 1
+	return my_peer_id
 
 func get_network_unique_id() -> int:
-	return 1
+	return my_peer_id
