@@ -147,6 +147,9 @@ func is_loading() -> bool:
 	_loader_mutex.unlock()
 	return value
 
+func _thread_print(msg) -> void:
+	print(msg)
+
 func _loader_thread_function(data: Array) -> void:
 	var file: File = data[0]
 	var path: String = data[1]
@@ -164,7 +167,7 @@ func _loader_thread_function(data: Array) -> void:
 		
 		var json_result: JSONParseResult = JSON.parse(line)
 		if json_result.error != OK:
-			print ("Error parsing JSON in %s on line %s: %s" % [path, line_number, line])
+			call_deferred("_thread_print", "Error parsing JSON in %s on line %s: %s" % [path, line_number, line])
 			continue
 		
 		if header == null:
@@ -228,7 +231,6 @@ func _add_log_entry(log_entry: Dictionary, peer_id: int) -> void:
 				input_data = input[tick]
 				if not input_data.compare_input(peer_id, log_entry['input']) and not tick in mismatches:
 					mismatches.append(tick)
-					print ("Input mismatch on tick: %s" % tick)
 		
 		Logger.LogType.STATE:
 			var state_data: StateData
@@ -239,7 +241,6 @@ func _add_log_entry(log_entry: Dictionary, peer_id: int) -> void:
 				state_data = state[tick]
 				if not state_data.compare_state(peer_id, log_entry['state']) and not tick in mismatches:
 					mismatches.append(tick)
-					print ("State mismatch on tick: %s" % tick)
 		
 		Logger.LogType.FRAME:
 			log_entry.erase('log_type')

@@ -27,6 +27,9 @@ func set_log_data(_log_data: LogData) -> void:
 	settings_dialog.setup_settings_dialog(log_data, data_graph, data_grid)
 
 func refresh_from_log_data() -> void:
+	if log_data.is_loading():
+		return
+	
 	time_field.max_value = log_data.end_time - log_data.start_time
 	
 	data_graph.refresh_from_log_data()
@@ -49,6 +52,9 @@ func clear() -> void:
 	refresh_from_log_data()
 
 func _on_Time_value_changed(value: float) -> void:
+	if log_data.is_loading():
+		return
+	
 	var time := int(value)
 	
 	# Update our tracking of the current frame.
@@ -64,6 +70,9 @@ func _on_PreviousFrameButton_pressed() -> void:
 	jump_to_previous_frame()
 
 func jump_to_previous_frame() -> void:
+	if log_data.is_loading():
+		return
+	
 	var frame_time := 0
 	
 	if seek_on_replay_peer_field.pressed:
@@ -88,6 +97,9 @@ func _on_NextFrameButton_pressed() -> void:
 	jump_to_next_frame()
 
 func jump_to_next_frame() -> void:
+	if log_data.is_loading():
+		return
+	
 	var frame_time := log_data.end_time
 	
 	if seek_on_replay_peer_field.pressed:
@@ -113,6 +125,8 @@ func _get_next_frame_time_for_peer(peer_id: int) -> int:
 
 func replay_to_current_frame() -> void:
 	if not replay_server and not replay_server.is_connected_to_game():
+		return
+	if log_data.is_loading():
 		return
 	if log_data.peer_ids.size() == 0:
 		return

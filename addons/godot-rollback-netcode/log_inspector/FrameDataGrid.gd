@@ -54,7 +54,7 @@ func refresh_from_log_data() -> void:
 	clear()
 	var root = create_item()
 	
-	if log_data == null or log_data.peer_ids.size() == 0:
+	if log_data == null or log_data.is_loading() or log_data.peer_ids.size() == 0:
 		set_column_titles_visible(false)
 		var empty = create_item(root)
 		empty.set_text(0, "No data.")

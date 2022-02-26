@@ -17,6 +17,9 @@ func set_log_data(_log_data: LogData) -> void:
 	canvas.set_log_data(log_data)
 
 func refresh_from_log_data() -> void:
+	if log_data.is_loading():
+		return
+	
 	scroll_bar.max_value = log_data.end_time - log_data.start_time
 	canvas.refresh_from_log_data()
 

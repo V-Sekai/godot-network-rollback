@@ -27,9 +27,7 @@ func set_editor_interface(_editor_interface) -> void:
 	editor_interface = _editor_interface
 
 func start_listening() -> void:
-	if server:
-		push_error("Replay server already listening")
-	else:
+	if not server:
 		var port = 49111
 		if ProjectSettings.has_setting(GAME_PORT_SETTING):
 			port = ProjectSettings.get_setting(GAME_PORT_SETTING)

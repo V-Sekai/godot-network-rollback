@@ -37,6 +37,9 @@ func refresh_from_log_data() -> void:
 	_on_TickNumber_value_changed(tick_number_field.value)
 
 func refresh_replay() -> void:
+	if log_data.is_loading():
+		return
+	
 	if replay_server and replay_server.is_connected_to_game():
 		var tick: int = int(tick_number_field.value)
 		var state_frame: LogData.StateData = log_data.state.get(tick, null)
@@ -64,6 +67,9 @@ func _clear_trees() -> void:
 	state_mismatches_data_tree.clear()
 
 func _on_TickNumber_value_changed(value: float) -> void:
+	if log_data.is_loading():
+		return
+	
 	var tick: int = int(value)
 	
 	var input_frame: LogData.InputData = log_data.input.get(tick, null)
@@ -162,6 +168,9 @@ func _create_tree_from_mismatches(tree: Tree, data: Dictionary, mismatches: Dict
 					child.set_text(2, JSON.print(mismatch.remote_state, JSON_INDENT))
 
 func _on_PreviousMismatchButton_pressed() -> void:
+	if log_data.is_loading():
+		return
+	
 	var current_tick := int(tick_number_field.value)
 	var previous_mismatch := -1
 	for mismatch_tick in log_data.mismatches:
@@ -173,6 +182,9 @@ func _on_PreviousMismatchButton_pressed() -> void:
 		tick_number_field.value = previous_mismatch
 
 func _on_NextMismatchButton_pressed() -> void:
+	if log_data.is_loading():
+		return
+	
 	var current_tick := int(tick_number_field.value)
 	var next_mismatch := -1
 	for mismatch_tick in log_data.mismatches:

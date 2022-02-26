@@ -64,6 +64,9 @@ func set_editor_interface(editor_interface) -> void:
 	replay_server.set_editor_interface(editor_interface)
 
 func _on_ClearButton_pressed() -> void:
+	if log_data.is_loading():
+		return
+	
 	log_data.clear()
 	data_description_label.text = data_description_label_default_text
 	state_input_viewer.clear()
@@ -87,6 +90,9 @@ func _on_FileDialog_files_selected(paths: PoolStringArray) -> void:
 			log_data.load_log_file(first_file)
 
 func refresh_from_log_data() -> void:
+	if log_data.is_loading():
+		return
+	
 	data_description_label.text = "%s logs (peer ids: %s) and %s ticks" % [log_data.peer_ids.size(), log_data.peer_ids, log_data.max_tick]
 	if log_data.mismatches.size() > 0:
 		data_description_label.text += " with %s mismatches" % log_data.mismatches.size()
