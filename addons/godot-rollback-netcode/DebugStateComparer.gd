@@ -98,7 +98,7 @@ func _find_mismatches_recursive(local_state: Dictionary, remote_state: Dictionar
 					_find_mismatches_recursive(_convert_array_to_dictionary(local_value), _convert_array_to_dictionary(remote_value), _extend_diff_path(path, key))
 			else:
 				_add_diff_mismatch(local_value, remote_value, path, key)
-		elif local_value != remote_value:
+		elif typeof(local_value) != typeof(remote_value) or local_value != remote_value:
 			_add_diff_mismatch(local_value, remote_value, path, key)
 
 static func _get_diff_path_string(path: Array, key) -> String:
