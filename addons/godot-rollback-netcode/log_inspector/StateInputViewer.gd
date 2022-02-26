@@ -84,6 +84,8 @@ func _on_TickNumber_value_changed(value: float) -> void:
 	if state_frame:
 		_create_tree_items_from_dictionary(state_data_tree, state_data_tree.create_item(), state_frame.state)
 		_create_tree_from_mismatches(state_mismatches_data_tree, state_frame.state, state_frame.mismatches)
+	
+	refresh_replay()
 
 static func _convert_array_to_dictionary(a: Array) -> Dictionary:
 	var d := {}
