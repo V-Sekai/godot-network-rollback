@@ -483,9 +483,16 @@ communication layer, for example,
 
 **Default implementation:** `res://addons/godot-rollback-network/RPCNetworkAdaptor.gd`
 
-There is an additional implementation included to integrate with the
-[WebRTC and Nakama addon for Godot](https://gitlab.com/snopek-games/godot-nakama-webrtc)
-which can be found at `res://addons/godot-rollback-network/NakamaWebRTCNetworkAdaptor.gd`.
+**Additional implementations:**
+
+- `res://addons/godot-rollback-network/NakamaWebRTCNetworkAdaptor.gd`:
+  Integrates with the
+  [WebRTC and Nakama addon for Godot](https://gitlab.com/snopek-games/godot-nakama-webrtc).
+
+- `res://addons/godot-rollback-network/DummyNetworkAdaptor.gd`:
+  Allows using the addon without any real networking. It's used by the replay
+  system in Log Inspector, and can also be used to implement an offline mode
+  in your game - see the demo project for an example of how to do this.
 
 #### `MessageSerializer` ####
 

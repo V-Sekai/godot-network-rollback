@@ -274,7 +274,7 @@ func _ready() -> void:
 	_sound_manager.setup_sound_manager(self)
 	
 	if network_adaptor == null:
-		set_network_adaptor(_create_class_from_project_settings('network/rollback/classes/network_adaptor', DEFAULT_NETWORK_ADAPTOR_PATH))
+		reset_network_adaptor()
 	if message_serializer == null:
 		set_message_serializer(_create_class_from_project_settings('network/rollback/classes/message_serializer', DEFAULT_MESSAGE_SERIALIZER_PATH))
 	if hash_serializer == null:
@@ -314,6 +314,9 @@ func set_network_adaptor(_network_adaptor: NetworkAdaptor) -> void:
 	network_adaptor.connect("received_remote_stop", self, "_on_received_remote_stop")
 	network_adaptor.connect("received_input_tick", self, "_on_received_input_tick")
 	network_adaptor.attach_network_adaptor(self)
+
+func reset_network_adaptor() -> void:
+	set_network_adaptor(_create_class_from_project_settings('network/rollback/classes/network_adaptor', DEFAULT_NETWORK_ADAPTOR_PATH))
 
 func set_message_serializer(_message_serializer: MessageSerializer) -> void:
 	assert(not started, "Changing the message serializer after SyncManager has started will probably break everything")

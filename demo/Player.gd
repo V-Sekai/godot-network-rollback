@@ -1,5 +1,7 @@
 extends Sprite
 
+export (String) var input_prefix = "player1_"
+
 enum PlayerInputKey {
 	INPUT_VECTOR,
 }
@@ -17,8 +19,8 @@ func _interpolate_state(old_state: Dictionary, new_state: Dictionary, weight: fl
 
 func _get_local_input() -> Dictionary:
 	var input_vector = Vector2(
-		Input.get_action_strength("player_right") - Input.get_action_strength("player_left"),
-		Input.get_action_strength("player_down") - Input.get_action_strength("player_up")
+		int(Input.is_action_pressed(input_prefix + "right")) - int(Input.is_action_pressed(input_prefix + "left")),
+		int(Input.is_action_pressed(input_prefix + "down")) - int(Input.is_action_pressed(input_prefix + "up"))
 	)
 	var input := {}
 	if input_vector != Vector2.ZERO:
