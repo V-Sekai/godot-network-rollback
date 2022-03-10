@@ -26,8 +26,5 @@ func is_network_host() -> bool:
 func is_network_master_for_node(node: Node) -> bool:
 	return node.get_network_master() == my_peer_id
 
-func get_network_master_for_node(node: Node) -> int:
-	return node.get_network_master()
-
 func get_network_unique_id() -> int:
 	return my_peer_id
