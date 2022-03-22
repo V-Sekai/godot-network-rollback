@@ -1099,18 +1099,21 @@ func _physics_process(_delta: float) -> void:
 	var local_input = _call_get_local_input()
 	_calculate_data_hash(local_input)
 	input_frame.players[network_adaptor.get_network_unique_id()] = InputForPlayer.new(local_input, false)
-	var serialized_input := message_serializer.serialize_input(local_input)
 	
-	# check that the serialized then unserialized input matches the original 
-	if debug_check_message_serializer_roundtrip:
-		var unserialized_input := message_serializer.unserialize_input(serialized_input)
-		_calculate_data_hash(unserialized_input)
-		if local_input["$"] != unserialized_input["$"]:
-			push_error("The input is different after being serialized and unserialized \n Original: %s \n Unserialized: %s" % [ordered_dict2str(local_input), ordered_dict2str(unserialized_input)])
+	# Only serialize and send input when we have real remote peers.
+	if peers.size() > 0 and not mechanized:
+		var serialized_input := message_serializer.serialize_input(local_input)
 		
-	_input_send_queue.append(serialized_input)
-	assert(input_tick == _input_send_queue_start_tick + _input_send_queue.size() - 1, "Input send queue ticks numbers are misaligned")
-	_send_input_messages_to_all_peers()
+		# check that the serialized then unserialized input matches the original 
+		if debug_check_message_serializer_roundtrip:
+			var unserialized_input := message_serializer.unserialize_input(serialized_input)
+			_calculate_data_hash(unserialized_input)
+			if local_input["$"] != unserialized_input["$"]:
+				push_error("The input is different after being serialized and unserialized \n Original: %s \n Unserialized: %s" % [ordered_dict2str(local_input), ordered_dict2str(unserialized_input)])
+			
+		_input_send_queue.append(serialized_input)
+		assert(input_tick == _input_send_queue_start_tick + _input_send_queue.size() - 1, "Input send queue ticks numbers are misaligned")
+		_send_input_messages_to_all_peers()
 	
 	if current_tick > 0:
 		if _logger:
