@@ -164,6 +164,7 @@ var debug_skip_nth_message := 0
 var debug_physics_process_msecs := 10.0
 var debug_process_msecs := 10.0
 var debug_check_message_serializer_roundtrip := false
+var debug_check_local_state_consistency := false
 
 # In seconds, because we don't want it to be dependent on the network tick.
 var ping_frequency := 1.0 setget set_ping_frequency
@@ -249,7 +250,8 @@ func _ready() -> void:
 		debug_skip_nth_message = 'network/rollback/debug/skip_nth_message',
 		debug_physics_process_msecs = 'network/rollback/debug/physics_process_msecs',
 		debug_process_msecs = 'network/rollback/debug/process_msecs',
-		debug_check_message_serializer_roundtrip = 'network/rollback/debug/check_message_serializer_roundtrip'
+		debug_check_message_serializer_roundtrip = 'network/rollback/debug/check_message_serializer_roundtrip',
+		debug_check_local_state_consistency = 'network/rollback/debug/check_local_state_consistency',
 	}
 	for property_name in project_settings:
 		var setting_name = project_settings[property_name]
@@ -672,6 +674,10 @@ func _do_tick(is_rollback: bool = false) -> bool:
 	
 	_save_current_state()
 	
+	# Debug check that states computed multiple times with complete inputs are the same
+	if debug_check_local_state_consistency and _last_state_hashed_tick >= current_tick:
+		_debug_check_consistent_local_state(state_buffer[-1], "Recomputed")
+	
 	emit_signal("tick_finished", is_rollback)
 	return true
 
@@ -990,6 +996,11 @@ func _physics_process(_delta: float) -> void:
 		_call_load_state(state_buffer[-rollback_ticks - 1].data)
 		state_buffer.resize(state_buffer.size() - rollback_ticks)
 		current_tick -= rollback_ticks
+		
+		# Debug check that states computed multiple times with complete inputs are the same
+		if debug_check_local_state_consistency and _last_state_hashed_tick >= current_tick:
+			var state := StateBufferFrame.new(current_tick, _call_save_state())
+			_debug_check_consistent_local_state(state, "Loaded")
 		
 		# Invalidate sync ticks after this, they may be asked for again
 		if requested_input_complete_tick > 0 and current_tick >= requested_input_complete_tick:
@@ -1397,3 +1408,14 @@ func ordered_dict2str(dict: Dictionary) -> String:
 			ret += ", "
 	ret += "}"
 	return ret
+
+func _debug_check_consistent_local_state(state: StateBufferFrame, message := "Loaded") -> void:
+	var hashed_state := _calculate_data_hash(state.data)
+	var previously_hashed_frame := _get_state_hash_frame(current_tick)
+	if previously_hashed_frame and previously_hashed_frame.state_hash != hashed_state:
+		push_error("%s state is not consistent with saved state \n Saved: %s \n %s: %s" % [
+			message,
+			ordered_dict2str(_get_state_frame(current_tick).data),
+			ordered_dict2str(state.data),
+			message
+			])
