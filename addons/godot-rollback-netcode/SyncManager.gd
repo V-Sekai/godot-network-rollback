@@ -656,11 +656,13 @@ func _do_tick(is_rollback: bool = false) -> bool:
 	# Predict any missing input.
 	for peer_id in peers:
 		if not input_frame.players.has(peer_id) or input_frame.players[peer_id].predicted:
-			var predicted_input := {}
+			var predicted_input: Dictionary
 			if previous_frame:
 				var peer: Peer = peers[peer_id]
 				var ticks_since_real_input = current_tick - peer.last_remote_input_tick_received
 				predicted_input = _call_predict_remote_input(previous_frame.get_player_input(peer_id), ticks_since_real_input)
+			else:
+				predicted_input = _call_predict_remote_input({}, -1)
 			_calculate_data_hash(predicted_input)
 			input_frame.players[peer_id] = InputForPlayer.new(predicted_input, true)
 	

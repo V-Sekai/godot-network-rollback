@@ -306,7 +306,8 @@ which will cause `SyncManager` to call various virtual methods on the node:
   "network master" DOES NOT match the peer id of the current client. If this
   method isn't provided, the same input from the last tick will be used as-is.
   This input will be passed into `_network_process()` when using predicted
-  input.
+  input. If `ticks_since_real_input` is negative, we haven't received any remote
+  inputs yet, which happens at the very start of the game.
 
 - `_network_process(input: Dictionary) -> void`: Processes this node for the
   current tick. The input will contain data from either `_get_local_input()`
