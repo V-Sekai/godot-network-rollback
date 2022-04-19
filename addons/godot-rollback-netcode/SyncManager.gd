@@ -198,6 +198,7 @@ var _last_state_hashed_tick := 0
 var _state_mismatch_count := 0
 var _in_rollback := false
 var _ran_physics_process := false
+var _ticks_since_last_interpolation_frame := 0
 var _debug_check_local_state_consistency_buffer := []
 
 signal sync_started ()
@@ -470,6 +471,7 @@ func _reset() -> void:
 	_state_mismatch_count = 0
 	_in_rollback = false
 	_ran_physics_process = false
+	_ticks_since_last_interpolation_frame = 0
 
 func _on_received_remote_start() -> void:
 	_reset()
@@ -1163,6 +1165,7 @@ func _physics_process(_delta: float) -> void:
 	
 	_time_since_last_tick = 0.0
 	_ran_physics_process = true
+	_ticks_since_last_interpolation_frame += 1
 	
 	var total_time_msecs = float(OS.get_ticks_usec() - start_time) / 1000.0
 	if debug_physics_process_msecs > 0 and total_time_msecs > debug_physics_process_msecs:
@@ -1179,15 +1182,16 @@ func _process(delta: float) -> void:
 	
 	# These are things that we want to run during "interpolation frames", in
 	# order to slim down the normal frames. Or, if interpolation is disabled,
-	# we need to run these always.
-	if not interpolation or not _ran_physics_process:
+	# we need to run these always. If we haven't managed to run this for more
+	# one tick, we make sure to sneak it in just in case.
+	if not interpolation or not _ran_physics_process or _ticks_since_last_interpolation_frame > 1:
 		if _logger:
 			_logger.begin_interpolation_frame(current_tick)
 		
 		_time_since_last_tick += delta
 		
-		# Don't interpolate if we are skipping ticks.
-		if interpolation and skip_ticks == 0:
+		# Don't interpolate if we are skipping ticks, or just ran physics process.
+		if interpolation and skip_ticks == 0 and not _ran_physics_process:
 			var weight: float = _time_since_last_tick / tick_time
 			if weight > 1.0:
 				weight = 1.0
@@ -1209,6 +1213,9 @@ func _process(delta: float) -> void:
 		
 		if _logger:
 			_logger.end_interpolation_frame(start_time)
+		
+		# Clear counter, because we just did an interpolation frame.
+		_ticks_since_last_interpolation_frame = 0
 	
 	# Clear flag so subsequent _process() calls will know that they weren't
 	# preceeded by _physics_process().
