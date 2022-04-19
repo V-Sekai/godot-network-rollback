@@ -6,6 +6,7 @@ const NetworkAdaptor = preload("res://addons/godot-rollback-netcode/NetworkAdapt
 const MessageSerializer = preload("res://addons/godot-rollback-netcode/MessageSerializer.gd")
 const HashSerializer = preload("res://addons/godot-rollback-netcode/HashSerializer.gd")
 const Logger = preload("res://addons/godot-rollback-netcode/Logger.gd")
+const DebugStateComparer = preload("res://addons/godot-rollback-netcode/DebugStateComparer.gd")
 
 class Peer extends Reference:
 	var peer_id: int
@@ -197,6 +198,7 @@ var _last_state_hashed_tick := 0
 var _state_mismatch_count := 0
 var _in_rollback := false
 var _ran_physics_process := false
+var _debug_check_local_state_consistency_buffer := []
 
 signal sync_started ()
 signal sync_stopped ()
@@ -996,13 +998,18 @@ func _physics_process(_delta: float) -> void:
 			return
 		
 		_call_load_state(state_buffer[-rollback_ticks - 1].data)
-		state_buffer.resize(state_buffer.size() - rollback_ticks)
+		
 		current_tick -= rollback_ticks
 		
-		# Debug check that states computed multiple times with complete inputs are the same
-		if debug_check_local_state_consistency and _last_state_hashed_tick >= current_tick:
-			var state := StateBufferFrame.new(current_tick, _call_save_state())
-			_debug_check_consistent_local_state(state, "Loaded")
+		if debug_check_local_state_consistency:
+			# Save already computed states for better logging in case of discrepancy
+			_debug_check_local_state_consistency_buffer = state_buffer.slice(state_buffer.size() - rollback_ticks - 1, state_buffer.size() - 1)
+			# Debug check that states computed multiple times with complete inputs are the same
+			if _last_state_hashed_tick >= current_tick:
+				var state := StateBufferFrame.new(current_tick, _call_save_state())
+				_debug_check_consistent_local_state(state, "Loaded")
+		
+		state_buffer.resize(state_buffer.size() - rollback_ticks)
 		
 		# Invalidate sync ticks after this, they may be asked for again
 		if requested_input_complete_tick > 0 and current_tick >= requested_input_complete_tick:
@@ -1414,10 +1421,11 @@ func ordered_dict2str(dict: Dictionary) -> String:
 func _debug_check_consistent_local_state(state: StateBufferFrame, message := "Loaded") -> void:
 	var hashed_state := _calculate_data_hash(state.data)
 	var previously_hashed_frame := _get_state_hash_frame(current_tick)
+	var previous_state = _debug_check_local_state_consistency_buffer.pop_front()
 	if previously_hashed_frame and previously_hashed_frame.state_hash != hashed_state:
-		push_error("%s state is not consistent with saved state \n Saved: %s \n %s: %s" % [
+		var comparer = DebugStateComparer.new()
+		comparer.find_mismatches(previous_state.data, state.data)
+		push_error("%s state is not consistent with saved state:\n %s" % [
 			message,
-			ordered_dict2str(_get_state_frame(current_tick).data),
-			ordered_dict2str(state.data),
-			message
+			comparer.print_mismatches(),
 			])
