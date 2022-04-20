@@ -69,7 +69,7 @@ This is a quick overview of the different pieces that the addon includes.
   the addon. It will be added to your project automatically when you enable
   the plugin. It must be named `SyncManager` for everything to work
   correctly.
- 
+
 - `res://addons/godot-rollback-netcode/SyncDebugger.gd`: Adding this
   singleton will cause more debug messages to be printed to the console (and
   captured in the normal Godot logs) and make a debug overlay available. By
@@ -117,7 +117,7 @@ section called "Virtual methods" below for more information.)
 
 - `stop() -> void`: Stops synchronizing. If called on the "host" (the
   peer with id 1) it will tell all the clients to stop as well.
-  
+
 - `clear_peers() -> void`: Clears the list of peers.
 
 - `start_logging(log_file_path: String, match_info: Dictionary = {}) -> void`:
@@ -229,7 +229,7 @@ section called "Virtual methods" below for more information.)
   This signal is emitted at the end of each interpolation frame, so that
   you can perform some operations during a frame with more time budget
   to spare (a lot more needs to happen during tick frames).
- 
+
 ### Node types ###
 
 This addon include a few rollback-aware node types:
@@ -588,7 +588,7 @@ but they are a super critical problem if they do occur.
 
 The "Log Inspector" can allow you to replay the match from the logs, by either
 loading state (in the "State/Input viewer") or re-executing frames (in the
-"Frame viewer" - _IMPLEMENTATION CURRENTLY INCOMPLETE_).
+"Frame viewer").
 
 This can be very helpful in debugging issues, by allowing you to visually
 _see_ the state on a particular peer, when there is a state mismatch, or
@@ -641,6 +641,21 @@ particular tick, it should load the state from that tick in the replay client.
 
 You can use the dropdown on the replay toolbar to configure which peer's data
 you would like to use in the replay.
+
+#### Manually reading log files ####
+
+Starting with v1.0.0-alpha8, the log files are stored in a binary format.
+However, a script is included in the addon to convert them to JSON, so that
+humans or external tools can read them, if necessary.
+
+You can run it like this:
+
+```
+godot --no-window --script addons/godot-rollback-netcode/log2json.gd --input=INPUT.log --output=OUTPUT.json
+```
+
+... replacing INPUT.log with a full path to the log file, and OUTPUT.json with
+a path to the JSON file that will be created.
 
 The most common "match flow"
 ----------------------------

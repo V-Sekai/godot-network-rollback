@@ -29,6 +29,11 @@ func _ready() -> void:
 		_on_ServerButton_pressed()
 	elif "client" in cmdline_args:
 		_on_ClientButton_pressed()
+	
+	if SyncReplay.active:
+		main_menu.visible = false
+		connection_panel.visible = false
+		reset_button.visible = false
 
 func _on_OnlineButton_pressed() -> void:
 	connection_panel.popup_centered()
@@ -125,6 +130,10 @@ func _on_ResetButton_pressed() -> void:
 	get_tree().reload_current_scene()
 
 func setup_match_for_replay(my_peer_id: int, peer_ids: Array, match_info: Dictionary) -> void:
-	main_menu.visible = false
-	connection_panel.visible = false
-	reset_button.visible = false
+	var client_peer_id: int
+	if my_peer_id == 1:
+		client_peer_id = peer_ids[0]
+	else:
+		client_peer_id = my_peer_id
+	$ClientPlayer.set_network_master(client_peer_id)
+

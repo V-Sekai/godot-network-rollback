@@ -98,7 +98,7 @@ func _create_tree_items_from_dictionary(tree: Tree, parent_item: TreeItem, data:
 		var value = data[key]
 		
 		var item = tree.create_item(parent_item)
-		item.set_text(0, key)
+		item.set_text(0, str(key))
 		
 		if value is Dictionary:	
 			_create_tree_items_from_dictionary(tree, item, value)
@@ -107,7 +107,7 @@ func _create_tree_items_from_dictionary(tree: Tree, parent_item: TreeItem, data:
 		else:
 			item.set_text(data_column, str(value))
 		
-		if key.begins_with('/root/SyncManager/'):
+		if key is String and key.begins_with('/root/SyncManager/'):
 			item.collapsed = true
 
 func _create_tree_from_mismatches(tree: Tree, data: Dictionary, mismatches: Dictionary) -> void:

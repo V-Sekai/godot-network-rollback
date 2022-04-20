@@ -45,7 +45,7 @@ func start(log_file_name: String, peer_id: int, match_info: Dictionary = {}) -> 
 	if not _started:
 		var err: int
 		
-		err = _log_file.open(log_file_name, File.WRITE)
+		err = _log_file.open_compressed(log_file_name, File.WRITE, File.COMPRESSION_ZSTD)
 		if err != OK:
 			return err
 		
@@ -54,7 +54,7 @@ func start(log_file_name: String, peer_id: int, match_info: Dictionary = {}) -> 
 			peer_id = peer_id,
 			match_info = match_info,
 		}
-		_log_file.store_string(JSON.print(header) + "\n")
+		_log_file.store_var(header)
 		
 		_started = true
 		_writer_thread.start(self, "_writer_thread_function")
@@ -95,7 +95,7 @@ func _writer_thread_function() -> void:
 		_writer_thread_mutex.unlock()
 		
 		if data_to_write is Dictionary:
-			_log_file.store_string(JSON.print(data_to_write) + "\n")
+			_log_file.store_var(data_to_write)
 		elif should_exit:
 			break
 

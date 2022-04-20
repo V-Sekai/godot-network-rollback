@@ -36,6 +36,9 @@ static func _clean_up_state(state: Dictionary) -> Dictionary:
 	
 	# Remove any keys that are ignored in the hash.
 	for node_path in state:
+		# I think this happens when there's an error reading a Dictionary.
+		if node_path == null:
+			state.erase(null)
 		for key in state[node_path].keys():
 			var value = state[node_path]
 			if key is String:

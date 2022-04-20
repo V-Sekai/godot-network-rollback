@@ -102,9 +102,7 @@ func send_message(msg: Dictionary) -> void:
 		push_error("Replay server: attempting to send message when not connected to game")
 		return
 	
-	var data := JSON.print(msg)
-	connection.put_u32(data.length())
-	connection.put_data(data.to_utf8())
+	connection.put_var(msg)
 
 func send_match_info(log_data: LogData, my_peer_id: int) -> void:
 	if not is_connected_to_game():

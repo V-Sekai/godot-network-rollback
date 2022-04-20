@@ -52,6 +52,11 @@ class InputData:
 		
 		mismatches[peer_id] = sorted_peer_input
 		return false
+	
+	func get_input_for_peer(peer_id: int, according_to_peer_id: int = -1) -> Dictionary:
+		if according_to_peer_id != -1 and mismatches.has(according_to_peer_id):
+			return mismatches[according_to_peer_id].get(peer_id, {})
+		return input.get(peer_id, {})
 
 class FrameData:
 	var frame: int
@@ -123,8 +128,7 @@ func load_log_file(path: String) -> void:
 		return
 	
 	var file = File.new()
-	var error = file.open(path, File.READ)
-	if file.open(path, File.READ) != OK:
+	if file.open_compressed(path, File.READ, File.COMPRESSION_ZSTD) != OK:
 		emit_signal("load_error", "Unable to open file for reading: %s" % path)
 		return
 	
@@ -150,29 +154,21 @@ func is_loading() -> bool:
 func _thread_print(msg) -> void:
 	print(msg)
 
-func _loader_thread_function(data: Array) -> void:
-	var file: File = data[0]
-	var path: String = data[1]
+func _loader_thread_function(input: Array) -> void:
+	var file: File = input[0]
+	var path: String = input[1]
 	
 	var header
-	var line_number := 0
 	var file_size = file.get_len()
 	
 	while not file.eof_reached():
-		line_number += 1
-		var line = file.get_line()
-		
-		if line == "\n":
-			continue
-		
-		var json_result: JSONParseResult = JSON.parse(line)
-		if json_result.error != OK:
-			call_deferred("_thread_print", "Error parsing JSON in %s on line %s: %s" % [path, line_number, line])
+		var data = file.get_var()
+		if data == null or not data is Dictionary:
 			continue
 		
 		if header == null:
-			if json_result.result['log_type'] == Logger.LogType.HEADER:
-				header = json_result.result
+			if data['log_type'] == Logger.LogType.HEADER:
+				header = data
 				
 				header['peer_id'] = int(header['peer_id'])
 				if header['peer_id'] in peer_ids:
@@ -207,7 +203,7 @@ func _loader_thread_function(data: Array) -> void:
 				_set_loading(false)
 				return
 		
-		_add_log_entry(json_result.result, header['peer_id'])
+		_add_log_entry(data, header['peer_id'])
 		call_deferred("emit_signal", "load_progress", file.get_position(), file_size)
 	
 	file.close()

@@ -129,6 +129,8 @@ func _on_ModeButton_item_selected(index: int) -> void:
 		state_input_viewer.visible = true
 	elif index == DataMode.FRAME:
 		frame_viewer.visible = true
+	
+	refresh_replay()
 
 func _on_StartServerButton_pressed() -> void:
 	replay_server.start_listening()

@@ -1,5 +1,6 @@
 extends Node
 
+const Logger = preload("res://addons/godot-rollback-netcode/Logger.gd")
 const DummyNetworkAdaptor = preload("res://addons/godot-rollback-netcode/DummyNetworkAdaptor.gd")
 
 const GAME_PORT_SETTING = 'network/rollback/log_inspector/replay_port'
@@ -60,15 +61,9 @@ func poll() -> void:
 		var status = connection.get_status()
 		if status == StreamPeerTCP.STATUS_CONNECTED:
 			while not _setting_up_match and connection.get_available_bytes() >= 4:
-				var length = connection.get_u32()
-				var data = connection.get_utf8_string(length)
-				
-				var result = JSON.parse(data)
-				if result.error != OK:
-					print ("SyncReplay received invalid JSON: %s" % data)
-					continue
-				
-				process_message(result.result)
+				var data = connection.get_var()
+				if data is Dictionary:
+					process_message(data)
 		elif status == StreamPeerTCP.STATUS_NONE:
 			get_tree().quit()
 		elif status == StreamPeerTCP.STATUS_ERROR:
@@ -94,6 +89,9 @@ func process_message(msg: Dictionary) -> void:
 		"load_state":
 			var state = msg.get('state', {})
 			_do_load_state(state)
+		
+		"execute_frame":
+			_do_execute_frame(msg)
 			
 		_:
 			push_error("SyncReplay message has unknown type: %s" % type)
@@ -131,3 +129,26 @@ func _do_setup_match2(my_peer_id: int, peer_ids: Array, match_info: Dictionary) 
 func _do_load_state(state: Dictionary) -> void:
 	state = SyncManager.hash_serializer.unserialize(state)
 	SyncManager._call_load_state(state)
+
+func _do_execute_frame(msg: Dictionary) -> void:
+	var frame_type: int = msg['frame_type']
+	var input_frames_received: Dictionary = msg.get('input_frames_received', {})
+	var rollback_ticks: int = msg.get('rollback_ticks', 0)
+	
+	input_frames_received = SyncManager.hash_serializer.unserialize(input_frames_received)
+	SyncManager.mechanized_input_received = input_frames_received
+	SyncManager.mechanized_rollback_ticks = rollback_ticks
+	
+	match frame_type:
+		Logger.FrameType.TICK:
+			SyncManager.execute_mechanized_tick()
+		
+		Logger.FrameType.INTERPOLATION_FRAME:
+			SyncManager.execute_mechanized_interpolation_frame(msg['delta'])
+		
+		Logger.FrameType.INTERFRAME:
+			SyncManager.execute_mechanized_interframe()
+		
+		_:
+			SyncManager.reset_mechanized_data()
+
