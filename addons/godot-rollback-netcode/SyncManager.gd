@@ -993,10 +993,10 @@ func _physics_process(_delta: float) -> void:
 		if debug_rollback_ticks > 0 and current_tick >= debug_rollback_ticks:
 			rollback_ticks = max(rollback_ticks, debug_rollback_ticks)
 		
-		# We need to resimulate the current tick since we did a partial rollback
+		# We need to reload the current tick since we did a partial rollback
 		# to the previous tick in order to interpolate.
-		if interpolation and current_tick > 0:
-			rollback_ticks = max(rollback_ticks, 1)
+		if interpolation and current_tick > 0 and rollback_ticks == 0:
+			_call_load_state(state_buffer[-1].data)
 	
 	if rollback_ticks > 0:
 		if _logger:
