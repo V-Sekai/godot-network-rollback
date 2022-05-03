@@ -529,23 +529,6 @@ func _call_get_local_input() -> Dictionary:
 				input[str(node.get_path())] = node_input
 	return input
 
-func _call_predict_remote_input(previous_input: Dictionary, ticks_since_real_input: int) -> Dictionary:
-	var input := {}
-	var nodes: Array = get_tree().get_nodes_in_group('network_sync')
-	for node in nodes:
-		if network_adaptor.is_network_master_for_node(node):
-			continue
-		
-		var node_path_str := str(node.get_path())
-		var has_predict_network_input: bool = node.has_method('_predict_remote_input')
-		if has_predict_network_input or previous_input.has(node_path_str):
-			var previous_input_for_node = previous_input.get(node_path_str, {})
-			var predicted_input_for_node = node._predict_remote_input(previous_input_for_node, ticks_since_real_input) if has_predict_network_input else previous_input_for_node.duplicate()
-			if predicted_input_for_node.size() > 0:
-				input[node_path_str] = predicted_input_for_node
-	
-	return input
-
 func _call_network_process(input_frame: InputBufferFrame) -> void:
 	var nodes: Array = get_tree().get_nodes_in_group('network_sync')
 	var process_nodes := []
@@ -659,25 +642,48 @@ func _update_state_hashes() -> void:
 		if _logger:
 			_logger.write_state(_last_state_hashed_tick, state_frame.data)
 
+func _predict_missing_input(input_frame: InputBufferFrame, previous_frame: InputBufferFrame) -> InputBufferFrame:
+	if not input_frame.is_complete(peers):
+		if not previous_frame:
+			previous_frame = InputBufferFrame.new(-1)
+		var missing_peers := input_frame.get_missing_peers(peers)
+		var missing_peers_predicted_input := {}
+		var missing_peers_ticks_since_real_input := {}
+		for peer_id in missing_peers:
+			missing_peers_predicted_input[peer_id] = {}
+			var peer: Peer = peers[peer_id]
+			missing_peers_ticks_since_real_input[peer_id] = -1 if peer.last_remote_input_tick_received == 0 \
+				else current_tick - peer.last_remote_input_tick_received
+		var nodes: Array = get_tree().get_nodes_in_group('network_sync')
+		for node in nodes:
+			var node_master: int = node.get_network_master()
+			if not node_master in missing_peers:
+				continue
+			
+			var previous_input := previous_frame.get_player_input(node_master)
+			var node_path_str := str(node.get_path())
+			var has_predict_network_input: bool = node.has_method('_predict_remote_input')
+			if has_predict_network_input or previous_input.has(node_path_str):
+				var previous_input_for_node = previous_input.get(node_path_str, {})
+				var ticks_since_real_input: int = missing_peers_ticks_since_real_input[node_master]
+				var predicted_input_for_node = node._predict_remote_input(previous_input_for_node, ticks_since_real_input) if has_predict_network_input else previous_input_for_node.duplicate()
+				if predicted_input_for_node.size() > 0:
+					missing_peers_predicted_input[node_master][node_path_str] = predicted_input_for_node
+		
+		for peer_id in missing_peers_predicted_input.keys():
+			var predicted_input = missing_peers_predicted_input[peer_id]
+			_calculate_data_hash(predicted_input)
+			input_frame.players[peer_id] = InputForPlayer.new(predicted_input, true)
+	
+	return input_frame
+
 func _do_tick(is_rollback: bool = false) -> bool:
 	var input_frame := get_input_frame(current_tick)
 	var previous_frame := get_input_frame(current_tick - 1)
 	
 	assert(input_frame != null, "Input frame for current_tick is null")
 	
-	# Predict any missing input.
-	for peer_id in peers:
-		if not input_frame.players.has(peer_id) or input_frame.players[peer_id].predicted:
-			var predicted_input: Dictionary
-			if previous_frame and previous_frame.players.has(peer_id):
-				var peer: Peer = peers[peer_id]
-				var ticks_since_real_input = -1 if peer.last_remote_input_tick_received == 0 \
-					else current_tick - peer.last_remote_input_tick_received
-				predicted_input = _call_predict_remote_input(previous_frame.get_player_input(peer_id), ticks_since_real_input)
-			else:
-				predicted_input = _call_predict_remote_input({}, -1)
-			_calculate_data_hash(predicted_input)
-			input_frame.players[peer_id] = InputForPlayer.new(predicted_input, true)
+	input_frame = _predict_missing_input(input_frame, previous_frame)
 	
 	_call_network_process(input_frame)
 	
