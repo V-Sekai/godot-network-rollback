@@ -31,6 +31,7 @@ updated:
 - [Rollback netcode in Godot (part 6): Playing offline!](https://www.youtube.com/watch?v=Yk7sLEK2vCg&list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir&index=6)
 - [Rollback netcode in Godot (part 7): Input Delay and Interpolation](https://www.youtube.com/watch?v=Y45rWIS3Qag&list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir&index=7)
 - [Rollback netcode in Godot (part 8): Animation Players](https://www.youtube.com/watch?v=avCF3BQV15U&list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir&index=8)
+- [Rollback netcode in Godot (part 9): Sound Effects](https://www.youtube.com/watch?v=qY7IVObS2Rw&list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir&index=9)
 
 More videos are coming soon!
 
