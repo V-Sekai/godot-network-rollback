@@ -1032,7 +1032,7 @@ func _physics_process(_delta: float) -> void:
 		state_buffer.resize(state_buffer.size() - rollback_ticks)
 		
 		# Invalidate sync ticks after this, they may be asked for again
-		if requested_input_complete_tick > 0 and current_tick >= requested_input_complete_tick:
+		if requested_input_complete_tick > 0 and current_tick < requested_input_complete_tick:
 			requested_input_complete_tick = 0
 		
 		emit_signal("state_loaded", rollback_ticks)
