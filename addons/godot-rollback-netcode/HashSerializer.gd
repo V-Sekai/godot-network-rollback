@@ -47,7 +47,8 @@ func serialize_other(value):
 		return {
 			_ = 'Vector3',
 			x = value.x,
-			y = value.y
+			y = value.y,
+			z = value.z,
 		}
 	elif value is Transform2D:
 		return {
@@ -59,9 +60,9 @@ func serialize_other(value):
 	elif value is Transform:
 		return {
 			_ = 'Transform',
-			x = {x = value.x.x, y = value.x.y, z = value.x.z},
-			y = {x = value.y.x, y = value.y.y, z = value.y.z},
-			z = {x = value.z.x, y = value.z.y, z = value.z.z},
+			x = {x = value.basis.x.x, y = value.basis.x.y, z = value.basis.x.z},
+			y = {x = value.basis.y.x, y = value.basis.y.y, z = value.basis.y.z},
+			z = {x = value.basis.z.x, y = value.basis.z.y, z = value.basis.z.z},
 			origin = {x = value.origin.x, y = value.origin.y, z = value.origin.z},
 		}
 	
