@@ -33,6 +33,7 @@ updated:
 - [Rollback netcode in Godot (part 8): Animation Players](https://www.youtube.com/watch?v=avCF3BQV15U&list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir&index=8)
 - [Rollback netcode in Godot (part 9): Sound Effects](https://www.youtube.com/watch?v=qY7IVObS2Rw&list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir&index=9)
 - [Rollback netcode in Godot (part 10): Random Numbers](https://www.youtube.com/watch?v=jjoRxXoTpPQ&list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir&index=10)
+- [Rollback netcode in Godot (part 11): Advanced Input Prediction](https://www.youtube.com/watch?v=fgzEBHQyf2k&list=PLCBLMvLIundBXwTa6gwlOUNc29_9btoir&index=11)
 
 More videos are coming soon!
 
