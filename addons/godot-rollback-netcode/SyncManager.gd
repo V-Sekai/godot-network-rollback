@@ -611,6 +611,13 @@ func _update_input_complete_tick() -> void:
 			break
 		if not input_frame.is_complete(peers):
 			break
+		# When we add debug rollbacks mark the input as not complete
+		# so that the invariant "a complete input frame cannot be rolled back" is respected
+		# NB: a complete input frame can still be loaded in a rollback for the incomplete input next frame
+		if debug_random_rollback_ticks > 0 and _input_complete_tick + 1 > current_tick - debug_random_rollback_ticks:
+			break
+		if debug_rollback_ticks > 0 and _input_complete_tick + 1 > current_tick - debug_rollback_ticks:
+			break
 		
 		if _logger:
 			_logger.write_input(input_frame.tick, input_frame.players)
