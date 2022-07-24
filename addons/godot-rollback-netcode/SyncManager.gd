@@ -821,6 +821,15 @@ func get_latest_input_for_node(node: Node) -> Dictionary:
 func get_latest_input_from_peer_for_path(peer_id: int, path: String) -> Dictionary:
 	return get_latest_input_from_peer(peer_id).get(path, {})
 
+func get_current_input_for_node(node: Node) -> Dictionary:
+	return get_current_input_from_peer_for_path(node.get_network_master(), str(node.get_path()))
+
+func get_current_input_from_peer_for_path(peer_id: int, path: String) -> Dictionary:
+	var input_frame = get_input_frame(current_tick)
+	if input_frame:
+		return input_frame.get_input_for_player(peer_id).get(path, {})
+	return {}
+
 func _get_state_frame(tick: int) -> StateBufferFrame:
 	if tick < _state_buffer_start_tick:
 		return null
