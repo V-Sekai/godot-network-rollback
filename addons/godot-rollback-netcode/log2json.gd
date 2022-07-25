@@ -28,7 +28,7 @@ func log2json(input_filename: String, output_filename: String) -> bool:
 	if not infile.file_exists(input_filename):
 		print ("No such input file: %s" % input_filename)
 		return false
-	if infile.open_compressed(input_filename, File.READ, File.COMPRESSION_ZSTD) != OK:
+	if infile.open_compressed(input_filename, File.READ, File.COMPRESSION_FASTLZ) != OK:
 		print ("Unable to open input file: %s" % input_filename)
 		return false
 	
