@@ -123,13 +123,13 @@ func despawn(node: Node) -> void:
 	_do_despawn(node, str(node.get_path()))
 
 func _do_despawn(node: Node, node_path: String) -> void:
+	var signal_name: String = node.get_meta('spawn_signal_name')
+	emit_signal("scene_despawned", signal_name, node)
+
 	if node.has_method('_network_despawn'):
 		node._network_despawn()
 	if node.get_parent():
 		node.get_parent().remove_child(node)
-	
-	var signal_name : String = node.get_meta('spawn_signal_name')
-	emit_signal("scene_despawned", signal_name, node)
 
 	if reuse_despawned_nodes and node_scenes.has(node_path) and is_instance_valid(node) and not node.is_queued_for_deletion():
 		var scene_path = node_scenes[node_path]
