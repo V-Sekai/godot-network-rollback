@@ -1,6 +1,7 @@
 extends Node
 
 const REUSE_DESPAWNED_NODES_SETTING := 'network/rollback/spawn_manager/reuse_despawned_nodes'
+const Utils = preload("res://addons/godot-rollback-netcode/Utils.gd")
 
 var spawn_records := {}
 var spawned_nodes := {}
@@ -92,11 +93,8 @@ func spawn(name: String, parent: Node, scene: PackedScene, data: Dictionary, ren
 	parent.add_child(spawned_node)
 	_alphabetize_children(parent)
 	
-	if spawned_node.has_method('_network_spawn_preprocess'):
-		data = spawned_node._network_spawn_preprocess(data)
-	
-	if spawned_node.has_method('_network_spawn'):
-		spawned_node._network_spawn(data)
+	data = Utils.try_call_interop_method(spawned_node, '_network_spawn_preprocess', [data], data)
+	Utils.try_call_interop_method(spawned_node, '_network_spawn', [data])
 	
 	var spawn_record := {
 		name = spawned_node.name,
@@ -126,8 +124,7 @@ func _do_despawn(node: Node, node_path: String) -> void:
 	var signal_name: String = node.get_meta('spawn_signal_name')
 	emit_signal("scene_despawned", signal_name, node)
 
-	if node.has_method('_network_despawn'):
-		node._network_despawn()
+	Utils.try_call_interop_method(node, '_network_despawn')
 	if node.get_parent():
 		node.get_parent().remove_child(node)
 
@@ -195,8 +192,7 @@ func _load_state(state: Dictionary) -> void:
 			parent.add_child(spawned_node)
 			_alphabetize_children(parent)
 			
-			if spawned_node.has_method('_network_spawn'):
-				spawned_node._network_spawn(spawn_record['data'])
+			Utils.try_call_interop_method(spawned_node, '_network_spawn', [spawn_record['data']])
 			
 			spawned_nodes[node_path] = spawned_node
 			node_scenes[node_path] = spawn_record['scene']

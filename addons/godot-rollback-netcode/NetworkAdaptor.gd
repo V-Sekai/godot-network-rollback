@@ -1,5 +1,22 @@
 extends Node
 
+const Utils = preload("res://addons/godot-rollback-netcode/Utils.gd")
+
+static func is_type(obj: Object):
+	return Utils.has_interop_method(obj, "attach_network_adaptor") \
+		and Utils.has_interop_method(obj, "detach_network_adaptor") \
+		and Utils.has_interop_method(obj, "start_network_adaptor") \
+		and Utils.has_interop_method(obj, "stop_network_adaptor") \
+		and Utils.has_interop_method(obj, "send_ping") \
+		and Utils.has_interop_method(obj, "send_ping_back") \
+		and Utils.has_interop_method(obj, "send_remote_start") \
+		and Utils.has_interop_method(obj, "send_remote_stop") \
+		and Utils.has_interop_method(obj, "send_input_tick") \
+		and Utils.has_interop_method(obj, "is_network_host") \
+		and Utils.has_interop_method(obj, "is_network_master_for_node") \
+		and Utils.has_interop_method(obj, "get_network_unique_id") \
+		and Utils.has_interop_method(obj, "poll")
+
 signal received_ping (peer_id, msg)
 signal received_ping_back (peer_id, msg)
 signal received_remote_start ()

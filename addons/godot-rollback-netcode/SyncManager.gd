@@ -7,6 +7,7 @@ const MessageSerializer = preload("res://addons/godot-rollback-netcode/MessageSe
 const HashSerializer = preload("res://addons/godot-rollback-netcode/HashSerializer.gd")
 const Logger = preload("res://addons/godot-rollback-netcode/Logger.gd")
 const DebugStateComparer = preload("res://addons/godot-rollback-netcode/DebugStateComparer.gd")
+const Utils = preload("res://addons/godot-rollback-netcode/Utils.gd")
 
 class Peer extends Reference:
 	var peer_id: int
@@ -138,9 +139,9 @@ const DEFAULT_NETWORK_ADAPTOR_PATH := "res://addons/godot-rollback-netcode/RPCNe
 const DEFAULT_MESSAGE_SERIALIZER_PATH := "res://addons/godot-rollback-netcode/MessageSerializer.gd"
 const DEFAULT_HASH_SERIALIZER_PATH := "res://addons/godot-rollback-netcode/HashSerializer.gd"
 
-var network_adaptor: NetworkAdaptor setget set_network_adaptor
-var message_serializer: MessageSerializer setget set_message_serializer
-var hash_serializer: HashSerializer setget set_hash_serializer
+var network_adaptor: Object setget set_network_adaptor
+var message_serializer: Object setget set_message_serializer
+var hash_serializer: Object setget set_hash_serializer
 
 var peers := {}
 var input_buffer := []
@@ -302,7 +303,8 @@ func _create_class_from_project_settings(setting_name: String, default_path: Str
 		class_path = default_path
 	return load(class_path).new()
 
-func set_network_adaptor(_network_adaptor: NetworkAdaptor) -> void:
+func set_network_adaptor(_network_adaptor: Object) -> void:
+	assert(NetworkAdaptor.is_type(_network_adaptor), "Network adaptor is missing a some methods")
 	assert(not started, "Changing the network adaptor after SyncManager has started will probably break everything")
 	
 	if network_adaptor != null:
@@ -329,11 +331,13 @@ func set_network_adaptor(_network_adaptor: NetworkAdaptor) -> void:
 func reset_network_adaptor() -> void:
 	set_network_adaptor(_create_class_from_project_settings('network/rollback/classes/network_adaptor', DEFAULT_NETWORK_ADAPTOR_PATH))
 
-func set_message_serializer(_message_serializer: MessageSerializer) -> void:
+func set_message_serializer(_message_serializer: Object) -> void:
+	assert(MessageSerializer.is_type(_message_serializer), "Message serializer is missing some methods")
 	assert(not started, "Changing the message serializer after SyncManager has started will probably break everything")
 	message_serializer = _message_serializer
 
-func set_hash_serializer(_hash_serializer: HashSerializer) -> void:
+func set_hash_serializer(_hash_serializer: Object) -> void:
+	assert(HashSerializer.is_type(_hash_serializer), "Hash serializer is missing some methods")
 	assert(not started, "Changing the hash serializer after SyncManager has started will probably break everything")
 	hash_serializer = _hash_serializer
 
@@ -523,8 +527,8 @@ func _call_get_local_input() -> Dictionary:
 	var input := {}
 	var nodes: Array = get_tree().get_nodes_in_group('network_sync')
 	for node in nodes:
-		if network_adaptor.is_network_master_for_node(node) and node.has_method('_get_local_input') and node.is_inside_tree() and not node.is_queued_for_deletion():
-			var node_input = node._get_local_input()
+		if network_adaptor.is_network_master_for_node(node) and Utils.has_interop_method(node, '_get_local_input') and node.is_inside_tree() and not node.is_queued_for_deletion():
+			var node_input = Utils.try_call_interop_method(node, '_get_local_input')
 			if node_input.size() > 0:
 				input[str(node.get_path())] = node_input
 	return input
@@ -541,34 +545,34 @@ func _call_network_process(input_frame: InputBufferFrame) -> void:
 		i -= 1
 		var node = nodes[i]
 		if node.is_inside_tree() and not node.is_queued_for_deletion():
-			if node.has_method('_network_preprocess'):
+			if Utils.has_interop_method(node, '_network_preprocess'):
 				var player_input = input_frame.get_player_input(node.get_network_master())
 				node._network_preprocess(player_input.get(str(node.get_path()), {}))
-			if node.has_method('_network_process'):
+			if Utils.has_interop_method(node, '_network_process'):
 				process_nodes.append(node)
-			if node.has_method('_network_postprocess'):
+			if Utils.has_interop_method(node, '_network_postprocess'):
 				postprocess_nodes.append(node)
-	
+
 	# Call _network_process().
 	for node in process_nodes:
 		if node.is_inside_tree() and not node.is_queued_for_deletion():
 			var player_input = input_frame.get_player_input(node.get_network_master())
-			node._network_process(player_input.get(str(node.get_path()), {}))
-	
+			Utils.try_call_interop_method(node, '_network_process', [player_input.get(str(node.get_path()), {})])
+		
 	# Call _network_postprocess().
 	for node in postprocess_nodes:
 		if node.is_inside_tree() and not node.is_queued_for_deletion():
 			var player_input = input_frame.get_player_input(node.get_network_master())
-			node._network_postprocess(player_input.get(str(node.get_path()), {}))
-
+			Utils.try_call_interop_method(node, '_network_postprocess', [player_input.get(str(node.get_path()), {})])
+	
 func _call_save_state() -> Dictionary:
 	var state := {}
 	var nodes: Array = get_tree().get_nodes_in_group('network_sync')
 	for node in nodes:
-		if node.has_method('_save_state') and node.is_inside_tree() and not node.is_queued_for_deletion():
+		if Utils.has_interop_method(node, '_save_state') and node.is_inside_tree() and not node.is_queued_for_deletion():
 			var node_path = str(node.get_path())
 			if node_path != "":
-				state[node_path] = node._save_state()
+				state[node_path] = Utils.try_call_interop_method(node, '_save_state')
 	
 	return state
 
@@ -578,8 +582,8 @@ func _call_load_state(state: Dictionary) -> void:
 			continue
 		var node = get_node_or_null(node_path)
 		assert(node != null, "Unable to restore state to missing node: %s" % node_path)
-		if node and node.has_method('_load_state'):
-			node._load_state(state[node_path])
+		if node:
+			Utils.try_call_interop_method(node, '_load_state', [state[node_path]])
 
 func _call_interpolate_state(weight: float) -> void:
 	for node_path in _interpolation_state:
@@ -587,9 +591,9 @@ func _call_interpolate_state(weight: float) -> void:
 			continue
 		var node = get_node_or_null(node_path)
 		if node:
-			if node.has_method('_interpolate_state'):
+			if Utils.has_interop_method(node, '_interpolate_state'):
 				var states = _interpolation_state[node_path]
-				node._interpolate_state(states[0], states[1], weight)
+				Utils.try_call_interop_method(node, '_interpolate_state', [states[0], states[1], weight])
 
 func _save_current_state() -> void:
 	assert(current_tick >= 0, "Attempting to store state for negative tick")
@@ -669,11 +673,11 @@ func _predict_missing_input(input_frame: InputBufferFrame, previous_frame: Input
 			
 			var previous_input := previous_frame.get_player_input(node_master)
 			var node_path_str := str(node.get_path())
-			var has_predict_network_input: bool = node.has_method('_predict_remote_input')
+			var has_predict_network_input: bool = Utils.has_interop_method(node, '_predict_remote_input')
 			if has_predict_network_input or previous_input.has(node_path_str):
 				var previous_input_for_node = previous_input.get(node_path_str, {})
 				var ticks_since_real_input: int = missing_peers_ticks_since_real_input[node_master]
-				var predicted_input_for_node = node._predict_remote_input(previous_input_for_node, ticks_since_real_input) if has_predict_network_input else previous_input_for_node.duplicate()
+				var predicted_input_for_node = Utils.try_call_interop_method(node, '_predict_remote_input', [previous_input_for_node, ticks_since_real_input]) if has_predict_network_input else previous_input_for_node.duplicate()
 				if predicted_input_for_node.size() > 0:
 					missing_peers_predicted_input[node_master][node_path_str] = predicted_input_for_node
 		
@@ -1165,11 +1169,11 @@ func _physics_process(_delta: float) -> void:
 		
 		# Only serialize and send input when we have real remote peers.
 		if peers.size() > 0:
-			var serialized_input := message_serializer.serialize_input(local_input)
+			var serialized_input: PoolByteArray = message_serializer.serialize_input(local_input)
 			
 			# check that the serialized then unserialized input matches the original 
 			if debug_check_message_serializer_roundtrip:
-				var unserialized_input := message_serializer.unserialize_input(serialized_input)
+				var unserialized_input: Dictionary = message_serializer.unserialize_input(serialized_input)
 				_calculate_data_hash(unserialized_input)
 				if local_input["$"] != unserialized_input["$"]:
 					push_error("The input is different after being serialized and unserialized \n Original: %s \n Unserialized: %s" % [ordered_dict2str(local_input), ordered_dict2str(unserialized_input)])
@@ -1340,6 +1344,7 @@ func _on_received_input_tick(peer_id: int, serialized_msg: PoolByteArray) -> voi
 				continue
 			
 			var remote_input = message_serializer.unserialize_input(all_remote_input[remote_tick])
+			
 			var input_frame := _get_or_create_input_frame(remote_tick)
 			if input_frame == null:
 				# _get_or_create_input_frame() will have already flagged the error,

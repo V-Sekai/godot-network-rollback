@@ -38,9 +38,9 @@ func add_project_settings() -> void:
 	_add_project_setting('network/rollback/spawn_manager/reuse_despawned_nodes', TYPE_BOOL, false)
 	_add_project_setting('network/rollback/sound_manager/default_sound_bus', TYPE_STRING, "Master")
 	
-	_add_project_setting('network/rollback/classes/network_adaptor', TYPE_STRING, "", PROPERTY_HINT_FILE, "*.gd")
-	_add_project_setting('network/rollback/classes/message_serializer', TYPE_STRING, "", PROPERTY_HINT_FILE, "*.gd")
-	_add_project_setting('network/rollback/classes/hash_serializer', TYPE_STRING, "", PROPERTY_HINT_FILE, "*.gd")
+	_add_project_setting('network/rollback/classes/network_adaptor', TYPE_STRING, "", PROPERTY_HINT_FILE, "*.gd,*.cs")
+	_add_project_setting('network/rollback/classes/message_serializer', TYPE_STRING, "", PROPERTY_HINT_FILE, "*.gd,*.cs")
+	_add_project_setting('network/rollback/classes/hash_serializer', TYPE_STRING, "", PROPERTY_HINT_FILE, "*.gd,*.cs")
 	
 	_add_project_setting('network/rollback/debug/rollback_ticks', TYPE_INT, 0, PROPERTY_HINT_RANGE, "0, 60")
 	_add_project_setting('network/rollback/debug/random_rollback_ticks', TYPE_INT, 0, PROPERTY_HINT_RANGE, "0, 60")

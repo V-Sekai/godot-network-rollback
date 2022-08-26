@@ -1,5 +1,11 @@
 extends Reference
 
+const Utils = preload("res://addons/godot-rollback-netcode/Utils.gd")
+
+static func is_type(obj: Object):
+	return Utils.has_interop_method(obj, "serialize") \
+		and Utils.has_interop_method(obj, "unserialize")
+
 func serialize(value):
 	if value is Dictionary:
 		return serialize_dictionary(value)

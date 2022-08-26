@@ -1,3 +1,6 @@
 /build/
 /.import/
 *.swp
+
+# VSCode Settings 
+.vscode/

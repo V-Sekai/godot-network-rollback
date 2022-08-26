@@ -2,6 +2,7 @@ extends Node
 
 const Logger = preload("res://addons/godot-rollback-netcode/Logger.gd")
 const DummyNetworkAdaptor = preload("res://addons/godot-rollback-netcode/DummyNetworkAdaptor.gd")
+const Utils = preload("res://addons/godot-rollback-netcode/Utils.gd")
 
 const GAME_PORT_SETTING = 'network/rollback/log_inspector/replay_port'
 const MATCH_SCENE_PATH_SETTING = 'network/rollback/log_inspector/replay_match_scene_path'
@@ -117,12 +118,12 @@ func _do_setup_match2(my_peer_id: int, peer_ids: Array, match_info: Dictionary) 
 	_setting_up_match = false
 	
 	var match_scene = get_tree().current_scene
-	if not match_scene.has_method(match_scene_method):
+	if not Utils.has_interop_method(match_scene, match_scene_method):
 		_show_error_and_quit("Match scene has no such method: %s" % match_scene_method)
 		return
 	
 	# Call the scene's setup method.
-	match_scene.call(match_scene_method, my_peer_id, peer_ids, match_info)
+	Utils.try_call_interop_method(match_scene, match_scene_method, [my_peer_id, peer_ids, match_info])
 
 	SyncManager.start()
 

@@ -15,6 +15,8 @@ debugging tools to make solving problems easier.
 Implementing rollback and prediction is HARD, and so every little bit of help
 is important. :-)
 
+For **C# support**, please install the [GodotRollbackNetcodeMono](https://github.com/Fractural/GodotRollbackNetcodeMono) addon in addition to this addon. The Mono addon is separately maintained, and it adds C# wrappers and base classes to make easier to work with the GDScript parts of this addon.
+
 Tutorials
 ---------
 
