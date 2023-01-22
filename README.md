@@ -1,6 +1,8 @@
 Godot Rollback Netcode
 ======================
 
+This is an unofficial fork of https://gitlab.com/snopek-games/godot-rollback-netcode.
+
 ![Logo](icon.png)
 
 This is an addon for implementing rollback and prediction netcode in the Godot
