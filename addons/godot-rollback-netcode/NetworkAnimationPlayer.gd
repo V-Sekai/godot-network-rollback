@@ -1,7 +1,7 @@
 extends AnimationPlayer
 class_name NetworkAnimationPlayer
 
-export (bool) var auto_reset := true
+@export (bool) var auto_reset := true
 
 func _ready() -> void:
 	method_call_mode = AnimationPlayer.ANIMATION_METHOD_CALL_IMMEDIATE

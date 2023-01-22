@@ -1,11 +1,11 @@
-tool
+@tool
 extends Tree
 
 const Logger = preload("res://addons/godot-rollback-netcode/Logger.gd")
 const LogData = preload("res://addons/godot-rollback-netcode/log_inspector/LogData.gd")
 
 var log_data: LogData
-var cursor_time: int = -1 setget set_cursor_time
+var cursor_time: int = -1 : set = set_cursor_time
 
 enum PropertyType {
 	BASIC,
@@ -140,7 +140,7 @@ func _prop_to_string(data: Dictionary, prop_name: String, prop_def = null) -> St
 		
 		PropertyType.TIME:
 			if value != null:
-				var datetime = OS.get_datetime_from_unix_time(value / 1000)
+				var datetime = Time.get_datetime_dict_from_system_from_unix_time(value / 1000)
 				value = "%04d-%02d-%02d %02d:%02d:%02d" % [
 					datetime['year'],
 					datetime['month'],
@@ -191,7 +191,7 @@ func _create_nested_item(name_parts: Array, root: TreeItem, items: Dictionary) -
 	if name_parts.size() == 0:
 		return null
 	
-	var name = PoolStringArray(name_parts).join('.')
+	var name = '.'.join(PackedStringArray(name_parts))
 	if items.has(name):
 		return items[name]
 	

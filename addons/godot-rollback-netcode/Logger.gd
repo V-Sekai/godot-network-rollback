@@ -1,4 +1,4 @@
-extends Reference
+extends RefCounted
 
 enum LogType {
 	HEADER,
@@ -27,25 +27,24 @@ var _writer_thread: Thread
 var _writer_thread_semaphore: Semaphore
 var _writer_thread_mutex: Mutex
 var _write_queue := []
-var _log_file: File
+var _log_file
 var _started := false
 
 var SyncManager
 
-func _init(_sync_manager) -> void:
+func _init(_sync_manager):
 	# Inject the SyncManager to prevent cyclic reference.
 	SyncManager = _sync_manager
 	
 	_writer_thread_mutex = Mutex.new()
 	_writer_thread_semaphore = Semaphore.new()
 	_writer_thread = Thread.new()
-	_log_file = File.new()
 
 func start(log_file_name: String, peer_id: int, match_info: Dictionary = {}) -> int:
 	if not _started:
 		var err: int
 
-		err = _log_file.open_compressed(log_file_name, File.WRITE, File.COMPRESSION_FASTLZ)
+		_log_file = FileAccess.open_compressed(log_file_name, FileAccess.WRITE, FileAccess.COMPRESSION_FASTLZ)
 		if err != OK:
 			return err
 		
@@ -57,7 +56,7 @@ func start(log_file_name: String, peer_id: int, match_info: Dictionary = {}) -> 
 		_log_file.store_var(header)
 		
 		_started = true
-		_writer_thread.start(self, "_writer_thread_function")
+		_writer_thread.start(Callable(self,"_writer_thread_function"))
 	
 	return OK
 
@@ -149,14 +148,14 @@ func begin_interframe() -> void:
 	if not data.has('frame_type'):
 		data['frame_type'] = FrameType.INTERFRAME
 	if not data.has('start_time'):
-		data['start_time'] = OS.get_system_time_msecs()
-
+		data['start_time'] = Time.get_ticks_msec()
+		
 func end_interframe() -> void:
 	if not data.has('frame_type'):
 		data['frame_type'] = FrameType.INTERFRAME
 	if not data.has('start_time'):
-		data['start_time'] = OS.get_system_time_msecs() - 1
-	data['end_time'] = OS.get_system_time_msecs()
+		data['start_time'] = Time.get_ticks_msec() - 1
+	data['end_time'] = Time.get_ticks_msec()
 	write_current_data()
 
 func begin_tick(tick: int) -> void:
@@ -165,11 +164,11 @@ func begin_tick(tick: int) -> void:
 	
 	data['frame_type'] = FrameType.TICK
 	data['tick'] = tick
-	data['start_time'] = OS.get_system_time_msecs()
+	data['start_time'] = Time.get_ticks_msec()
 
 func end_tick(start_ticks_usecs: int) -> void:
-	data['end_time'] = OS.get_system_time_msecs()
-	data['duration'] = float(OS.get_ticks_usec() - start_ticks_usecs) / 1000.0
+	data['end_time'] = Time.get_ticks_msec()
+	data['duration'] = float(Time.get_ticks_usec() - start_ticks_usecs) / 1000.0
 	write_current_data()
 
 func skip_tick(skip_reason: int, start_ticks_usecs: int) -> void:
@@ -183,16 +182,16 @@ func begin_interpolation_frame(tick: int) -> void:
 	
 	data['frame_type'] = FrameType.INTERPOLATION_FRAME
 	data['tick'] = tick
-	data['start_time'] = OS.get_system_time_msecs()
+	data['start_time'] = Time.get_ticks_msec()
 
 func end_interpolation_frame(start_ticks_usecs: int) -> void:
-	data['end_time'] = OS.get_system_time_msecs()
-	data['duration'] = float(OS.get_ticks_usec() - start_ticks_usecs) / 1000.0
+	data['end_time'] = Time.get_ticks_msec()
+	data['duration'] = float(Time.get_ticks_usec() - start_ticks_usecs) / 1000.0
 	write_current_data()
 
 func log_fatal_error(msg: String) -> void:
 	if not data.has('end_time'):
-		data['end_time'] = OS.get_system_time_msecs()
+		data['end_time'] = Time.get_ticks_msec()
 	data['fatal_error'] = true
 	data['fatal_error_message'] = msg
 	write_current_data()
@@ -218,13 +217,13 @@ func increment_value(key: String, amount: int = 1) -> void:
 		data[key] += amount
 
 func start_timing(timer: String) -> void:
-	assert(not _start_times.has(timer), "Timer already exists: %s" % timer)
-	_start_times[timer] = OS.get_ticks_usec()
+	assert(not _start_times.has(timer)) #,"Timer already exists: %s" % timer)
+	_start_times[timer] = Time.get_ticks_usec()
 
 func stop_timing(timer: String, accumulate: bool = false) -> void:
-	assert(_start_times.has(timer), "No such timer: %s" % timer)
+	assert(_start_times.has(timer)) #,"No such timer: %s" % timer)
 	if _start_times.has(timer):
-		add_timing(timer, float(OS.get_ticks_usec() - _start_times[timer]) / 1000.0, accumulate)
+		add_timing(timer, float(Time.get_ticks_usec() - _start_times[timer]) / 1000.0, accumulate)
 		_start_times.erase(timer)
 
 func add_timing(timer: String, msecs: float, accumulate: bool = false) -> void:

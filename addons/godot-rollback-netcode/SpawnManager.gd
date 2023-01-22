@@ -54,7 +54,7 @@ static func _node_name_sort_callback(a: Node, b: Node) -> bool:
 
 func _alphabetize_children(parent: Node) -> void:
 	var children = parent.get_children()
-	children.sort_custom(self, '_node_name_sort_callback')
+	children.sort_custom(Callable(self,'_node_name_sort_callback'))
 	for index in range(children.size()):
 		var child = children[index]
 		parent.move_child(child, index)
@@ -80,7 +80,7 @@ func _instance_scene(resource_path: String) -> Node:
 	
 	#print ("Instancing new %s" % resource_path)
 	var scene = load(resource_path)
-	return scene.instance()
+	return scene.instantiate()
 
 func spawn(name: String, parent: Node, scene: PackedScene, data: Dictionary, rename: bool = true, signal_name: String = '') -> Node:
 	var spawned_node = _instance_scene(scene.resource_path)
@@ -184,7 +184,7 @@ func _load_state(state: Dictionary) -> void:
 		if not spawned_nodes.has(node_path):
 			var spawn_record = spawn_records[node_path]
 			var parent = get_tree().current_scene.get_node(spawn_record['parent'])
-			assert(parent != null, "Can't re-spawn node when parent doesn't exist")
+			assert(parent != null) #,"Can't re-spawn node when parent doesn't exist")
 			var name = spawn_record['name']
 			_remove_colliding_node(name, parent)
 			var spawned_node = _instance_scene(spawn_record['scene'])

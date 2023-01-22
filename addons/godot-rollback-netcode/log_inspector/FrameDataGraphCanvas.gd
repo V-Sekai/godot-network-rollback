@@ -1,11 +1,11 @@
-tool
+@tool
 extends Control
 
 const Logger = preload("res://addons/godot-rollback-netcode/Logger.gd")
 const LogData = preload("res://addons/godot-rollback-netcode/log_inspector/LogData.gd")
 
-var start_time := 0 setget set_start_time
-var cursor_time := -1 setget set_cursor_time
+var start_time := 0 : set = set_start_time
+var cursor_time := -1 : set = set_cursor_time
 
 var show_network_arrows := true
 var network_arrow_peers := []
@@ -70,22 +70,22 @@ func set_cursor_time(_cursor_time: int) -> void:
 		
 		var relative_cursor_time = cursor_time - start_time
 		if relative_cursor_time < 0:
-			set_start_time(cursor_time - (rect_size.x - CURSOR_SCROLL_GAP))
-		elif relative_cursor_time > rect_size.x:
+			set_start_time(cursor_time - (size.x - CURSOR_SCROLL_GAP))
+		elif relative_cursor_time > size.x:
 			set_start_time(cursor_time - CURSOR_SCROLL_GAP)
 
 func _ready() -> void:
-	_font = DynamicFont.new()
+	_font = FontFile.new()
 	_font.font_data = load("res://addons/godot-rollback-netcode/log_inspector/monogram_extended.ttf")
 	_font.size = 16
 	
-	_font_big = DynamicFont.new()
+	_font_big = FontFile.new()
 	_font_big.font_data = load("res://addons/godot-rollback-netcode/log_inspector/monogram_extended.ttf")
 	_font_big.size = 32
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
-		if event.button_index == BUTTON_LEFT and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 			set_cursor_time(int(start_time + event.position.x))
 
 func _draw_peer(peer_id: int, peer_rect: Rect2, draw_data: Dictionary) -> void:
@@ -177,10 +177,10 @@ func _draw_peer(peer_id: int, peer_rect: Rect2, draw_data: Dictionary) -> void:
 					rollback_height = extended_peer_rect.size.y
 				var rollback_point = Vector2(center_position.x, frame_rect.position.y + frame_rect.size.y - rollback_height)
 				if last_rollback_point != null:
-					draw_line(last_rollback_point, rollback_point, ROLLBACK_LINE_COLOR, 2.0, true)
+					draw_line(last_rollback_point,rollback_point,ROLLBACK_LINE_COLOR,2.0)
 				last_rollback_point = rollback_point
 				
-		# Move on to the next frame.
+		# Move checked to the next frame.
 		if frame.frame < log_data.get_frame_count(peer_id) - 1:
 			frame = log_data.get_frame(peer_id, frame.frame + 1)
 		else:
@@ -208,23 +208,23 @@ func _draw_network_arrows(start_positions: Dictionary, end_positions: Dictionary
 			start_position.y -= 15
 			end_position.y += 10
 		
-		draw_line(start_position, end_position, color, 2.0, true)
+		draw_line(start_position,end_position,color,2.0)
 		
 		# Draw the arrow head.
 		var sqrt12 = sqrt(0.5)
 		var vector: Vector2 = end_position - start_position
 		var t := Transform2D(vector.angle(), end_position)
-		var points := PoolVector2Array([
-			t.xform(Vector2(0, 0)),
-			t.xform(Vector2(-NETWORK_ARROW_SIZE, sqrt12 * NETWORK_ARROW_SIZE)),
-			t.xform(Vector2(-NETWORK_ARROW_SIZE, sqrt12 * -NETWORK_ARROW_SIZE)),
+		var points := PackedVector2Array([
+			t * Vector2(0, 0),
+			t * Vector2(-NETWORK_ARROW_SIZE, sqrt12 * NETWORK_ARROW_SIZE),
+			t * Vector2(-NETWORK_ARROW_SIZE, sqrt12 * -NETWORK_ARROW_SIZE),
 		])
-		var colors := PoolColorArray([
+		var colors := PackedColorArray([
 			color,
 			color,
 			color,
 		])
-		draw_primitive(points, colors, PoolVector2Array())
+		draw_primitive(points, colors, PackedVector2Array())
 
 func _draw() -> void:
 	if log_data == null or log_data.is_loading():
@@ -236,13 +236,13 @@ func _draw() -> void:
 	var draw_data := {}
 	var peer_rects := {}
 	
-	var peer_height: float = (rect_size.y - ((peer_count - 1) * PEER_GAP)) / peer_count
+	var peer_height: float = (size.y - ((peer_count - 1) * PEER_GAP)) / peer_count
 	var current_y := 0
 	for peer_index in range(peer_count):
 		var peer_id = log_data.peer_ids[peer_index]
 		var peer_rect := Rect2(
 			Vector2(0, current_y),
-			Vector2(rect_size.x, peer_height))
+			Vector2(size.x, peer_height))
 		peer_rects[peer_id] = peer_rect
 		_draw_peer(peer_id, peer_rect, draw_data)
 		current_y += (peer_height + PEER_GAP)
@@ -257,9 +257,9 @@ func _draw() -> void:
 		var peer_rect: Rect2 = peer_rects[peer_id]
 		draw_string(_font, peer_rect.position + Vector2(0, PEER_GAP), "Peer %s" % peer_id, Color(1.0, 1.0, 1.0))
 	
-	if cursor_time >= start_time and cursor_time <= start_time + rect_size.x:
+	if cursor_time >= start_time and cursor_time <= start_time + size.x:
 		draw_line(
 			Vector2(cursor_time - start_time, 0),
-			Vector2(cursor_time - start_time, rect_size.y),
+			Vector2(cursor_time - start_time, size.y),
 			Color(1.0, 0.0, 0.0),
 			3.0)

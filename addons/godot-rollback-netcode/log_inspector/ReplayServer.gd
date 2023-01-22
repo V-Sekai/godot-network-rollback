@@ -1,13 +1,13 @@
-tool
+@tool
 extends Node
 
 const LogData = preload("res://addons/godot-rollback-netcode/log_inspector/LogData.gd")
 
 const GAME_ARGUMENTS_SETTING = 'network/rollback/log_inspector/replay_arguments'
 const GAME_PORT_SETTING = 'network/rollback/log_inspector/replay_port'
-const MAIN_RUN_ARGS_SETTING = 'editor/main_run_args'
+const MAIN_RUN_ARGS_SETTING = 'editor/run/main_run_args'
 
-var server: TCP_Server
+var server: TCPServer
 var connection: StreamPeerTCP
 var editor_interface = null
 var game_pid: int = 0
@@ -32,7 +32,7 @@ func start_listening() -> void:
 		if ProjectSettings.has_setting(GAME_PORT_SETTING):
 			port = ProjectSettings.get_setting(GAME_PORT_SETTING)
 		
-		server = TCP_Server.new()
+		server = TCPServer.new()
 		server.listen(port, "127.0.0.1")
 		emit_signal("started_listening")
 

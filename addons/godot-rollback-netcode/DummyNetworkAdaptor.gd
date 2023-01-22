@@ -2,29 +2,29 @@ extends "res://addons/godot-rollback-netcode/NetworkAdaptor.gd"
 
 var my_peer_id: int
 
-func _init(_my_peer_id: int = 1) -> void:
+func _init(_my_peer_id: int = 1):
 	my_peer_id = _my_peer_id
 
 func send_ping(peer_id: int, msg: Dictionary) -> void:
-	pass
+	super.send_ping(peer_id, msg)
 
 func send_ping_back(peer_id: int, msg: Dictionary) -> void:
-	pass
+	super.send_ping_back(peer_id, msg)
 
 func send_remote_start(peer_id: int) -> void:
-	pass
+	super.send_remote_start(peer_id)
 
 func send_remote_stop(peer_id: int) -> void:
-	pass
+	super.send_remote_stop(peer_id)
 
-func send_input_tick(peer_id: int, msg: PoolByteArray) -> void:
-	pass
+func send_input_tick(peer_id: int, msg: PackedByteArray) -> void:
+	super.send_input_tick(peer_id, msg)
 
 func is_network_host() -> bool:
 	return my_peer_id == 1
 
 func is_network_master_for_node(node: Node) -> bool:
-	return node.get_network_master() == my_peer_id
+	return node.get_multiplayer_authority() == my_peer_id
 
-func get_network_unique_id() -> int:
+func get_unique_id() -> int:
 	return my_peer_id

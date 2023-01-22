@@ -19,7 +19,7 @@ class MessageHash:
 	var value: int
 	var time: int
 	
-	func _init(_value: int, _time: int) -> void:
+	func _init(_value: int,_time: int):
 		value = _value
 		time = _time
 
@@ -31,17 +31,17 @@ var _skipped_tick_count := 0
 
 func attach_network_adaptor(sync_manager) -> void:
 	if OnlineMatch:
-		OnlineMatch.connect("webrtc_peer_added", self, '_on_OnlineMatch_webrtc_peer_added')
-		OnlineMatch.connect("webrtc_peer_removed", self, '_on_OnlineMatch_webrtc_peer_removed')
-		OnlineMatch.connect("disconnected", self, '_on_OnlineMatch_disconnected')
+		OnlineMatch.connect("webrtc_peer_added",Callable(self,'_on_OnlineMatch_webrtc_peer_added'))
+		OnlineMatch.connect("webrtc_peer_removed",Callable(self,'_on_OnlineMatch_webrtc_peer_removed'))
+		OnlineMatch.connect("disconnected",Callable(self,'_on_OnlineMatch_disconnected'))
 	else:
-		push_error("Can't find OnlineMatch singleton that the NakamaWebRTCNetworkAdaptor depends on!")
+		push_error("Can't find OnlineMatch singleton that the NakamaWebRTCNetworkAdaptor depends checked!")
 
 func detach_network_adaptor(sync_manager) -> void:
 	if OnlineMatch:
-		OnlineMatch.disconnect("webrtc_peer_added", self, '_on_OnlineMatch_webrtc_peer_added')
-		OnlineMatch.disconnect("webrtc_peer_removed", self, '_on_OnlineMatch_webrtc_peer_removed')
-		OnlineMatch.disconnect("disconnected", self, '_on_OnlineMatch_disconnected')
+		OnlineMatch.disconnect("webrtc_peer_added",Callable(self,'_on_OnlineMatch_webrtc_peer_added'))
+		OnlineMatch.disconnect("webrtc_peer_removed",Callable(self,'_on_OnlineMatch_webrtc_peer_removed'))
+		OnlineMatch.disconnect("disconnected",Callable(self,'_on_OnlineMatch_disconnected'))
 
 func start_network_adaptor(sync_manager) -> void:
 	_last_messages.clear()
@@ -83,14 +83,14 @@ func _on_OnlineMatch_webrtc_peer_removed(webrtc_peer: WebRTCPeerConnection, play
 func _on_OnlineMatch_disconnected() -> void:
 	_data_channels.clear()
 
-func send_input_tick(peer_id: int, msg: PoolByteArray) -> void:
+func send_input_tick(peer_id: int, msg: PackedByteArray) -> void:
 	if _data_channels.has(peer_id) and _data_channels[peer_id].get_ready_state() == WebRTCDataChannel.STATE_OPEN:
 		var data_channel: WebRTCDataChannel = _data_channels[peer_id]
 		
 		# Skip sending if the data channel is over the max buffered amount.
 		# Assuming the max_buffered_amount value is well tuned, this will kick
-		# in when SCTP's flow control turns on, and we want to wait until it
-		# turns back off before sending any more data.
+		# in when SCTP's flow control turns checked, and we want to wait until it
+		# turns back unchecked before sending any more data.
 		if max_buffered_amount > 0 and data_channel.get_buffered_amount() > max_buffered_amount:
 			if _last_skipped_tick == SyncManager.current_tick:
 				# We don't need to output the message multiple times per tick.
@@ -115,7 +115,7 @@ func send_input_tick(peer_id: int, msg: PoolByteArray) -> void:
 		var last_messages_for_peer = _last_messages[peer_id]
 		
 		# Clear out expired duplicate message records.
-		var current_time = OS.get_ticks_msec()
+		var current_time = Time.get_ticks_msec()
 		while last_messages_for_peer.size() > 0:
 			if current_time - last_messages_for_peer[0].time >= max_duplicate_msecs:
 				#print ("[%s] Retiring duplicate from duplicate message history" % [SyncManager.current_tick])

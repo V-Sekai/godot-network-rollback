@@ -14,7 +14,7 @@ static func is_type(obj: Object):
 		and Utils.has_interop_method(obj, "send_input_tick") \
 		and Utils.has_interop_method(obj, "is_network_host") \
 		and Utils.has_interop_method(obj, "is_network_master_for_node") \
-		and Utils.has_interop_method(obj, "get_network_unique_id") \
+		and Utils.has_interop_method(obj, "get_unique_id") \
 		and Utils.has_interop_method(obj, "poll")
 
 signal received_ping (peer_id, msg)
@@ -47,7 +47,7 @@ func send_remote_start(peer_id: int) -> void:
 func send_remote_stop(peer_id: int) -> void:
 	push_error("UNIMPLEMENTED ERROR: NetworkAdaptor.send_remote_stop()")
 
-func send_input_tick(peer_id: int, msg: PoolByteArray) -> void:
+func send_input_tick(peer_id: int, msg: PackedByteArray) -> void:
 	push_error("UNIMPLEMENTED ERROR: NetworkAdaptor.send_input_tick()")
 
 func is_network_host() -> bool:
@@ -58,8 +58,8 @@ func is_network_master_for_node(node: Node) -> bool:
 	push_error("UNIMPLEMENTED ERROR: NetworkAdaptor.is_network_master_for_node()")
 	return true
 
-func get_network_unique_id() -> int:
-	push_error("UNIMPLEMENTED ERROR: NetworkAdaptor.get_network_unique_id()")
+func get_unique_id() -> int:
+	push_error("UNIMPLEMENTED ERROR: NetworkAdaptor.get_unique_id()")
 	return 1
 
 func poll() -> void:

@@ -1,5 +1,5 @@
-tool
-extends Reference
+@tool
+extends RefCounted
 
 const Logger = preload("res://addons/godot-rollback-netcode/Logger.gd")
 
@@ -9,7 +9,7 @@ class StateData:
 	var state_hash: int
 	var mismatches := {}
 	
-	func _init(_tick: int, _state: Dictionary) -> void:
+	func _init(_tick: int,_state: Dictionary):
 		tick = _tick
 		state = _state
 		state_hash = _state['$']
@@ -27,7 +27,7 @@ class InputData:
 	var input_hash: int
 	var mismatches := {}
 	
-	func _init(_tick: int, _input: Dictionary) -> void:
+	func _init(_tick: int,_input: Dictionary):
 		tick = _tick
 		input = sort_dictionary(_input)
 		input_hash = input.hash()
@@ -65,7 +65,7 @@ class FrameData:
 	var start_time: int
 	var end_time: int
 	
-	func _init(_frame: int, _type: int, _data: Dictionary) -> void:
+	func _init(_frame: int,_type: int,_data: Dictionary):
 		frame = _frame
 		type = _type
 		data = _data
@@ -102,7 +102,7 @@ signal load_finished ()
 signal load_error (msg)
 signal data_updated ()
 
-func _init() -> void:
+func _init():
 	_loader_mutex = Mutex.new()
 
 func clear() -> void:
@@ -137,7 +137,7 @@ func load_log_file(path: String) -> void:
 	_loader_thread = Thread.new()
 	
 	_is_loading = true
-	_loader_thread.start(self, "_loader_thread_function", [file, path])
+	_loader_thread.start(Callable(self,"_loader_thread_function").bind([file, path]))
 
 func _set_loading(_value: bool) -> void:
 	_loader_mutex.lock()
@@ -159,7 +159,7 @@ func _loader_thread_function(input: Array) -> void:
 	var path: String = input[1]
 	
 	var header
-	var file_size = file.get_len()
+	var file_size = file.get_length()
 	
 	while not file.eof_reached():
 		var data = file.get_var()

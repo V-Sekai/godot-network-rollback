@@ -12,13 +12,13 @@ var _debug_pressed: bool = false
 var print_previous_state := false
 
 func _ready() -> void:
-	SyncManager.connect("rollback_flagged", self, "_on_SyncManager_rollback_flagged")
-	SyncManager.connect("prediction_missed", self, "_on_SyncManager_prediction_missed")
-	SyncManager.connect("skip_ticks_flagged", self, "_on_SyncManager_skip_ticks_flagged")
-	SyncManager.connect("remote_state_mismatch", self, "_on_SyncManager_remote_state_mismatch")
-	SyncManager.connect("peer_pinged_back", self, "_on_SyncManager_peer_pinged_back")
-	SyncManager.connect("state_loaded", self, "_on_SyncManager_state_loaded")
-	SyncManager.connect("tick_finished", self, "_on_SyncManager_tick_finished")
+	SyncManager.connect("rollback_flagged",Callable(self,"_on_SyncManager_rollback_flagged"))
+	SyncManager.connect("prediction_missed",Callable(self,"_on_SyncManager_prediction_missed"))
+	SyncManager.connect("skip_ticks_flagged",Callable(self,"_on_SyncManager_skip_ticks_flagged"))
+	SyncManager.connect("remote_state_mismatch",Callable(self,"_on_SyncManager_remote_state_mismatch"))
+	SyncManager.connect("peer_pinged_back",Callable(self,"_on_SyncManager_peer_pinged_back"))
+	SyncManager.connect("state_loaded",Callable(self,"_on_SyncManager_state_loaded"))
+	SyncManager.connect("tick_finished",Callable(self,"_on_SyncManager_tick_finished"))
 
 func create_debug_overlay(overlay_instance = null) -> void:
 	if _debug_overlay != null:
@@ -26,7 +26,7 @@ func create_debug_overlay(overlay_instance = null) -> void:
 		_canvas_layer.remove_child(_debug_overlay)
 	
 	if overlay_instance == null:
-		overlay_instance = DebugOverlay.instance()
+		overlay_instance = DebugOverlay.instantiate()
 	if _canvas_layer == null:
 		_canvas_layer = CanvasLayer.new()
 		add_child(_canvas_layer)
@@ -55,7 +55,7 @@ func _on_SyncManager_skip_ticks_flagged(count: int) -> void:
 
 func _on_SyncManager_prediction_missed(tick: int, peer_id: int, local_input: Dictionary, remote_input: Dictionary) -> void:
 	print ("-----")
-	print ("Prediction missed on tick %s for peer %s" % [tick, peer_id])
+	print ("Prediction missed checked tick %s for peer %s" % [tick, peer_id])
 	print ("Received input: %s" % SyncManager.hash_serializer.serialize(remote_input))
 	print ("Predicted input: %s" % SyncManager.hash_serializer.serialize(local_input))
 	

@@ -1,6 +1,6 @@
-extends Sprite
+extends Sprite2D
 
-export (String) var input_prefix = "player1_"
+@export var input_prefix : String = "player1_"
 
 enum PlayerInputKey {
 	INPUT_VECTOR,

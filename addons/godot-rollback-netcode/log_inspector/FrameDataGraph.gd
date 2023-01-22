@@ -1,12 +1,12 @@
-tool
+@tool
 extends VBoxContainer
 
 const LogData = preload("res://addons/godot-rollback-netcode/log_inspector/LogData.gd")
 
-onready var canvas = $Canvas
-onready var scroll_bar = $ScrollBar
+@onready var canvas = $Canvas
+@onready var scroll_bar = $ScrollBar
 
-var cursor_time: int = -1 setget set_cursor_time
+var cursor_time: int = -1 : set = set_cursor_time
 
 var log_data: LogData
 
