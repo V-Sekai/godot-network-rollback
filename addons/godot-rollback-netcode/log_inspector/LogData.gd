@@ -134,8 +134,8 @@ func load_log_file(path: String) -> void:
 		push_error("Attempting to load log file when one is already loading")
 		return
 
-	var file = File.new()
-	if file.open_compressed(path, File.READ, File.COMPRESSION_FASTLZ) != OK:
+	var file = FileAccess.open_compressed(path, FileAccess.READ, FileAccess.COMPRESSION_FASTLZ)
+	if file.is_null():
 		emit_signal("load_error", "Unable to open file for reading: %s" % path)
 		return
 
@@ -166,7 +166,7 @@ func _thread_print(msg) -> void:
 
 
 func _loader_thread_function(input: Array) -> void:
-	var file: File = input[0]
+	var file: FileAccess = input[0]
 	var path: String = input[1]
 
 	var header

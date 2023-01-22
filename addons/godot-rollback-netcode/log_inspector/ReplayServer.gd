@@ -79,7 +79,7 @@ func launch_game() -> void:
 		var args := []
 		for arg in args_string.split(" "):
 			args.push_back(arg)
-		game_pid = OS.execute(OS.get_executable_path(), args, false)
+		game_pid = OS.execute(OS.get_executable_path(), args)
 
 
 func stop_game() -> void:

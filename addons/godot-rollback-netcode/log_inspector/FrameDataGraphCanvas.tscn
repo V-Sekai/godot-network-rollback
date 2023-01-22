@@ -3,10 +3,13 @@
 [ext_resource type="Script" path="res://addons/godot-rollback-netcode/log_inspector/FrameDataGraphCanvas.gd" id="1"]
 
 [node name="FrameDataGraphCanvas" type="Control"]
+custom_minimum_size = Vector2(1152, 648)
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 size_flags_vertical = 3
 script = ExtResource("1")
 __meta__ = {

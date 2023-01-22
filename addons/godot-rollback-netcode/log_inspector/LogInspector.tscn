@@ -2,7 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://bbrvpu00jkxxg" path="res://addons/godot-rollback-netcode/log_inspector/ProgressDialog.tscn" id="1"]
 [ext_resource type="Script" path="res://addons/godot-rollback-netcode/log_inspector/LogInspector.gd" id="2"]
-[ext_resource type="PackedScene" path="res://addons/godot-rollback-netcode/log_inspector/StateInputViewer.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://bepc1gbme7nn3" path="res://addons/godot-rollback-netcode/log_inspector/StateInputViewer.tscn" id="3"]
 [ext_resource type="PackedScene" uid="uid://5d0cs1d1xp45" path="res://addons/godot-rollback-netcode/log_inspector/FrameViewer.tscn" id="4"]
 [ext_resource type="Script" path="res://addons/godot-rollback-netcode/log_inspector/ReplayServer.gd" id="5"]
 

@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://addons/godot-rollback-netcode/debugger/DebugOverlay.gd" id="1"]
 
 [node name="DebugOverlay" type="HBoxContainer"]
+custom_minimum_size = Vector2(1052, 648)
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
