@@ -11,9 +11,8 @@ config_version=5
 [application]
 
 config/name="Godot Rollback Netcode Demo"
-run/main_scene="res://demo/Main.tscn"
+run/main_scene="res://rollback_netcode_demo/Main.tscn"
 config/features=PackedStringArray("4.0")
-config/icon="res://icon.png"
 
 [autoload]
 
@@ -92,7 +91,7 @@ player2_up={
 [network]
 
 rollback/interpolation=true
-rollback/log_inspector/replay_match_scene_path="res://demo/Main.tscn"
+rollback/log_inspector/replay_match_scene_path="res://rollback_netcode_demo/Main.tscn"
 
 [physics]
 

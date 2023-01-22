@@ -157,14 +157,14 @@ section called "Virtual methods" below for more information.)
   * `parent`: The parent node the spawned scene will be added to.
   * `scene`: The scene to spawn.
   * `data`: Data that will be passed to `_network_spawn_preprocess()` and
-    `_network_spawn()` on the top-level node. See the "Virtual methods"
-    described below for more information.
+	`_network_spawn()` on the top-level node. See the "Virtual methods"
+	described below for more information.
   * `rename`: If true, the actual name of the top-level node that is spawned
-    will have an incrementing integer appended to it. If false, it'll try to
-    use the `name` but this could lead to conflicts. Only set to false if you
-    know for sure that no other sibling node will use that name.
+	will have an incrementing integer appended to it. If false, it'll try to
+	use the `name` but this could lead to conflicts. Only set to false if you
+	know for sure that no other sibling node will use that name.
   * `signal_name`: If provided, this is the name that'll be passed to the
-    "scene_spawned" signal; otherwise the `name` will be used.
+	"scene_spawned" signal; otherwise the `name` will be used.
 
 - `despawn(node: Node) -> void`: De-spawns a node that was previously
   spawned via `SyncManager.spawn()`. It calls `_network_despawn()` and removes
@@ -180,20 +180,20 @@ section called "Virtual methods" below for more information.)
   current tick, so that we won't play it again if we re-execute the same
   tick again due to a rollback.
   * `identifier`: A unique identifier for the sound. Only one sound with this
-    identifier will be played on the current tick. The common convention is
-    to use the node path of the node playing the sound, with some sort of
-    "tag" appended, for example:
-    ```
-    SyncManager.play_sound(str(get_path()) + ':shoot', shoot_sound)
-    ```
+	identifier will be played on the current tick. The common convention is
+	to use the node path of the node playing the sound, with some sort of
+	"tag" appended, for example:
+	```
+	SyncManager.play_sound(str(get_path()) + ':shoot', shoot_sound)
+	```
   * `sound`: The sound resource to play.
   * `info`: A set of optional parameters, including:
-    - `position`: A `Vector2` giving the position the sound should originate
-      from. If omitted, positional audio won't be used.
-    - `volume_db`: A `float` giving the volume in decibels.
-    - `pitch_scale`: A `float` to scale the pitch.
-    - `bus`: The name of the bus to play the sound to. If none is given, the
-      default bus configured in Project Settings will be used.
+	- `position`: A `Vector2` giving the position the sound should originate
+	  from. If omitted, positional audio won't be used.
+	- `volume_db`: A `float` giving the volume in decibels.
+	- `pitch_scale`: A `float` to scale the pitch.
+	- `bus`: The name of the bus to play the sound to. If none is given, the
+	  default bus configured in Project Settings will be used.
 
 #### Signals: ####
 
@@ -459,9 +459,9 @@ game!*
   - `my_peer_id: int`: The peer id that the replay client will be displaying.
   - `peer_ids: Array`: An array of the other peer ids in the match.
   - `match_info: Dictionary`: The `match_info` Dictionary that was passed to
-    `SyncManager.start_logging()` when creating the log that we are replaying
-    from. This should be used to initialize the match to the same state as
-    the match that was logged.
+	`SyncManager.start_logging()` when creating the log that we are replaying
+	from. This should be used to initialize the match to the same state as
+	the match that was logged.
 - **Replay Arguments**: The arguments to pass to the game on the command-line
   when launching it as a replay client.
 - **Replay Port**: The TCP port used by the Godot editor to communicate with
@@ -634,9 +634,9 @@ support this:
    implementation will look something like:
    ```
    func setup_match_for_replay(my_peer_id: int, peer_ids: Array, match_info: Dictionary) -> void:
-     # Setup the match using 'match_info' and disable anything we don't
-     # want or need during replay.
-     pass
+	 # Setup the match using 'match_info' and disable anything we don't
+	 # want or need during replay.
+	 pass
    ```
    For more details on the individual arguments, see what the "Project
    Settings" section above says about this setting.

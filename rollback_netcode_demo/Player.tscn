@@ -1,6 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://bvsgxh8kd5fq5"]
+[gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://demo/Player.gd" id="1"]
+[ext_resource type="Script" path="res://rollback_netcode_demo/Player.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://djlpxceqpyiww" path="res://assets/godot.png" id="2"]
 
 [node name="Player" type="Sprite2D" groups=["network_sync"]]

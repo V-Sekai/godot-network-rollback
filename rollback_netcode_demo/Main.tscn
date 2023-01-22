@@ -1,7 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://co71ud7roxi5u"]
+[gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://demo/Main.gd" id="1"]
-[ext_resource type="PackedScene" uid="uid://bvsgxh8kd5fq5" path="res://demo/Player.tscn" id="2"]
+[ext_resource type="Script" path="res://rollback_netcode_demo/Main.gd" id="1"]
+[ext_resource type="PackedScene" path="res://rollback_netcode_demo/Player.tscn" id="2"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1")
