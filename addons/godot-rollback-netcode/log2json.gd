@@ -23,10 +23,10 @@ func main(arguments: Dictionary) -> bool:
 		print("Must pass output file as --output=FILENAME")
 		return false
 
-	return log2json(arguments["input"], arguments["output"])
+	return log_to_json(arguments["input"], arguments["output"])
 
 
-func log2json(input_filename: String, output_filename: String) -> bool:
+func log_to_json(input_filename: String, output_filename: String) -> bool:
 	if not FileAccess.file_exists(input_filename):
 		print("No such input file: %s" % input_filename)
 		return false
