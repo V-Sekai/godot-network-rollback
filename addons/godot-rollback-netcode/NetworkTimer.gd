@@ -1,10 +1,10 @@
 extends Node
 class_name NetworkTimer
 
-@export (bool) var autostart := false
-@export (bool) var one_shot := false
-@export (int) var wait_ticks := 0
-@export (bool) var hash_state := true
+@export var autostart : bool = false
+@export var one_shot : bool = false
+@export var wait_ticks : int = 0
+@export var hash_state : bool = true
 
 var ticks_left := 0
 
