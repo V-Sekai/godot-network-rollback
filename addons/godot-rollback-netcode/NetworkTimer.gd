@@ -1,25 +1,28 @@
 extends Node
 class_name NetworkTimer
 
-@export var autostart : bool = false
-@export var one_shot : bool = false
-@export var wait_ticks : int = 0
-@export var hash_state : bool = true
+@export var autostart: bool = false
+@export var one_shot: bool = false
+@export var wait_ticks: int = 0
+@export var hash_state: bool = true
 
 var ticks_left := 0
 
 var _running := false
 
-signal timeout ()
+signal timeout
+
 
 func _ready() -> void:
-	add_to_group('network_sync')
-	SyncManager.connect("sync_stopped",Callable(self,"_on_SyncManager_sync_stopped"))
+	add_to_group("network_sync")
+	SyncManager.connect("sync_stopped", Callable(self, "_on_SyncManager_sync_stopped"))
 	if autostart:
 		start()
 
+
 func is_stopped() -> bool:
 	return not _running
+
 
 func start(ticks: int = -1) -> void:
 	if ticks > 0:
@@ -27,12 +30,15 @@ func start(ticks: int = -1) -> void:
 	ticks_left = wait_ticks
 	_running = true
 
+
 func stop():
 	_running = false
 	ticks_left = 0
 
+
 func _on_SyncManager_sync_stopped() -> void:
 	stop()
+
 
 func _network_process(_input: Dictionary) -> void:
 	if not _running:
@@ -40,13 +46,14 @@ func _network_process(_input: Dictionary) -> void:
 	if ticks_left <= 0:
 		_running = false
 		return
-	
+
 	ticks_left -= 1
-	
+
 	if ticks_left == 0:
 		if not one_shot:
 			ticks_left = wait_ticks
 		emit_signal("timeout")
+
 
 func _save_state() -> Dictionary:
 	if hash_state:
@@ -62,12 +69,13 @@ func _save_state() -> Dictionary:
 			_ticks_left = ticks_left,
 		}
 
+
 func _load_state(state: Dictionary) -> void:
 	if hash_state:
-		_running = state['running']
-		wait_ticks = state['wait_ticks']
-		ticks_left = state['ticks_left']
+		_running = state["running"]
+		wait_ticks = state["wait_ticks"]
+		ticks_left = state["ticks_left"]
 	else:
-		_running = state['_running']
-		wait_ticks = state['_wait_ticks']
-		ticks_left = state['_ticks_left']
+		_running = state["_running"]
+		wait_ticks = state["_wait_ticks"]
+		ticks_left = state["_ticks_left"]

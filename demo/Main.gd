@@ -10,34 +10,37 @@ const DummyNetworkAdaptor = preload("res://addons/godot-rollback-netcode/DummyNe
 @onready var sync_lost_label = $CanvasLayer/SyncLostLabel
 @onready var reset_button = $CanvasLayer/ResetButton
 
-const LOG_FILE_DIRECTORY = 'user://detailed_logs'
+const LOG_FILE_DIRECTORY = "user://detailed_logs"
 
 var logging_enabled := true
 
+
 func _ready() -> void:
-	get_tree().get_multiplayer().peer_connected.connect(Callable(self,"_on_network_peer_connected"))
-	get_tree().get_multiplayer().peer_disconnected.connect(Callable(self,"_on_network_peer_disconnected"))
-	get_tree().get_multiplayer().server_disconnected.connect(Callable(self,"_on_server_disconnected"))
-	SyncManager.sync_started.connect(Callable(self,"_on_SyncManager_sync_started"))
-	SyncManager.sync_stopped.connect(Callable(self,"_on_SyncManager_sync_stopped"))
-	SyncManager.sync_lost.connect(Callable(self,"_on_SyncManager_sync_lost"))
-	SyncManager.sync_regained.connect(Callable(self,"_on_SyncManager_sync_regained"))
-	SyncManager.sync_error.connect(Callable(self,"_on_SyncManager_sync_error"))
-	
+	get_tree().get_multiplayer().peer_connected.connect(Callable(self, "_on_network_peer_connected"))
+	get_tree().get_multiplayer().peer_disconnected.connect(Callable(self, "_on_network_peer_disconnected"))
+	get_tree().get_multiplayer().server_disconnected.connect(Callable(self, "_on_server_disconnected"))
+	SyncManager.sync_started.connect(Callable(self, "_on_SyncManager_sync_started"))
+	SyncManager.sync_stopped.connect(Callable(self, "_on_SyncManager_sync_stopped"))
+	SyncManager.sync_lost.connect(Callable(self, "_on_SyncManager_sync_lost"))
+	SyncManager.sync_regained.connect(Callable(self, "_on_SyncManager_sync_regained"))
+	SyncManager.sync_error.connect(Callable(self, "_on_SyncManager_sync_error"))
+
 	var cmdline_args = OS.get_cmdline_args()
 	if "server" in cmdline_args:
 		_on_ServerButton_pressed()
 	elif "client" in cmdline_args:
 		_on_ClientButton_pressed()
-	
+
 	if SyncReplay.active:
 		main_menu.visible = false
 		connection_panel.visible = false
 		reset_button.visible = false
 
+
 func _on_OnlineButton_pressed() -> void:
 	connection_panel.popup_centered()
 	SyncManager.reset_network_adaptor()
+
 
 func _on_LocalButton_pressed() -> void:
 	main_menu.visible = false
@@ -45,12 +48,14 @@ func _on_LocalButton_pressed() -> void:
 	SyncManager.network_adaptor = DummyNetworkAdaptor.new()
 	SyncManager.start()
 
+
 func _on_ServerButton_pressed() -> void:
 	var peer = ENetMultiplayerPeer.new()
 	peer.create_server(int(port_field.text), 1)
 	get_tree().get_multiplayer().multiplayer_peer = peer
 	connection_panel.visible = false
 	main_menu.visible = false
+
 
 func _on_ClientButton_pressed() -> void:
 	var peer = ENetMultiplayerPeer.new()
@@ -60,13 +65,14 @@ func _on_ClientButton_pressed() -> void:
 	main_menu.visible = false
 	message_label.text = "Connecting..."
 
+
 func _on_network_peer_connected(peer_id: int):
 	$ServerPlayer.set_multiplayer_authority(1)
 	if get_tree().get_multiplayer().is_server():
 		$ClientPlayer.set_multiplayer_authority(peer_id)
 	else:
 		$ClientPlayer.set_multiplayer_authority(get_tree().get_multiplayer().get_unique_id())
-	
+
 	SyncManager.add_peer(peer_id)
 	if get_tree().get_multiplayer().is_server():
 		message_label.text = "Starting..."
@@ -74,50 +80,61 @@ func _on_network_peer_connected(peer_id: int):
 		await get_tree().create_timer(2.0).timeout
 		SyncManager.start()
 
+
 func _on_network_peer_disconnected(peer_id: int):
 	message_label.text = "Disconnected"
 	SyncManager.remove_peer(peer_id)
 
+
 func _on_server_disconnected() -> void:
 	_on_network_peer_disconnected(1)
 
+
 func _on_SyncManager_sync_started() -> void:
 	message_label.text = "Started!"
-	
+
 	if logging_enabled and not SyncReplay.active:
 		if not DirAccess.dir_exists_absolute(LOG_FILE_DIRECTORY):
 			DirAccess.make_dir_absolute(LOG_FILE_DIRECTORY)
 		var datetime = Time.get_datetime_dict_from_system(true)
-		var log_file_name = "%04d%02d%02d-%02d%02d%02d-peer-%d.log" % [
-			datetime['year'],
-			datetime['month'],
-			datetime['day'],
-			datetime['hour'],
-			datetime['minute'],
-			datetime['second'],
-			get_tree().get_multiplayer().get_unique_id(),
-		]
-		
-		SyncManager.start_logging(LOG_FILE_DIRECTORY + '/' + log_file_name)
+		var log_file_name = (
+			"%04d%02d%02d-%02d%02d%02d-peer-%d.log"
+			% [
+				datetime["year"],
+				datetime["month"],
+				datetime["day"],
+				datetime["hour"],
+				datetime["minute"],
+				datetime["second"],
+				get_tree().get_multiplayer().get_unique_id(),
+			]
+		)
+
+		SyncManager.start_logging(LOG_FILE_DIRECTORY + "/" + log_file_name)
+
 
 func _on_SyncManager_sync_stopped() -> void:
 	if logging_enabled:
 		SyncManager.stop_logging()
 
+
 func _on_SyncManager_sync_lost() -> void:
 	sync_lost_label.visible = true
+
 
 func _on_SyncManager_sync_regained() -> void:
 	sync_lost_label.visible = false
 
+
 func _on_SyncManager_sync_error(msg: String) -> void:
 	message_label.text = "Fatal sync error: " + msg
 	sync_lost_label.visible = false
-	
+
 	var peer = get_tree().get_multiplayer().multiplayer_peer
 	if peer:
 		peer.close_connection()
 	SyncManager.clear_peers()
+
 
 func _on_ResetButton_pressed() -> void:
 	SyncManager.stop()
@@ -127,6 +144,7 @@ func _on_ResetButton_pressed() -> void:
 		peer.close_connection()
 	get_tree().reload_current_scene()
 
+
 func setup_match_for_replay(my_peer_id: int, peer_ids: Array, _match_info: Dictionary) -> void:
 	var client_peer_id: int
 	if my_peer_id == 1:
@@ -134,4 +152,3 @@ func setup_match_for_replay(my_peer_id: int, peer_ids: Array, _match_info: Dicti
 	else:
 		client_peer_id = my_peer_id
 	$ClientPlayer.set_multiplayer_authority(client_peer_id)
-

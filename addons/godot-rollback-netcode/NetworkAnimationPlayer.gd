@@ -1,19 +1,22 @@
 extends AnimationPlayer
 class_name NetworkAnimationPlayer
 
-@export var auto_reset : bool = true
+@export var auto_reset: bool = true
+
 
 func _ready() -> void:
 	method_call_mode = AnimationPlayer.ANIMATION_METHOD_CALL_IMMEDIATE
 	playback_process_mode = AnimationPlayer.ANIMATION_PROCESS_MANUAL
-	add_to_group('network_sync')
+	add_to_group("network_sync")
+
 
 func _network_process(input: Dictionary) -> void:
 	if is_playing():
 		advance(SyncManager.tick_time)
 
+
 func _save_state() -> Dictionary:
-	if is_playing() and (not auto_reset or current_animation != 'RESET'):
+	if is_playing() and (not auto_reset or current_animation != "RESET"):
 		return {
 			is_playing = true,
 			current_animation = current_animation,
@@ -21,19 +24,15 @@ func _save_state() -> Dictionary:
 			current_speed = playback_speed,
 		}
 	else:
-		return {
-			is_playing = false,
-			current_animation = '',
-			current_position = 0.0,
-			current_speed = 1
-		}
+		return {is_playing = false, current_animation = "", current_position = 0.0, current_speed = 1}
+
 
 func _load_state(state: Dictionary) -> void:
-	if state['is_playing']:
-		if not is_playing() or current_animation != state['current_animation']:
-			play(state['current_animation'])
-		seek(state['current_position'], true)
-		playback_speed = state['current_speed']
+	if state["is_playing"]:
+		if not is_playing() or current_animation != state["current_animation"]:
+			play(state["current_animation"])
+		seek(state["current_position"], true)
+		playback_speed = state["current_speed"]
 	elif is_playing():
 		if auto_reset and has_animation("RESET"):
 			play("RESET")
